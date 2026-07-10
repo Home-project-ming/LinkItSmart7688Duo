@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -58,7 +59,7 @@ type I2CReadInput struct {
 	Length int  `json:"length" jsonschema:"number of bytes to read (1-256)"`
 }
 type I2CReadOutput struct {
-	Data []byte `json:"data" jsonschema:"bytes read from the device"`
+	Data []int `json:"data" jsonschema:"bytes read from the device"`
 }
 
 func i2cReadHandler(ctx context.Context, req *mcp.CallToolRequest, input I2CReadInput) (*mcp.CallToolResult, I2CReadOutput, error) {
@@ -66,20 +67,31 @@ func i2cReadHandler(ctx context.Context, req *mcp.CallToolRequest, input I2CRead
 	if err != nil {
 		return nil, I2CReadOutput{}, err
 	}
-	return nil, I2CReadOutput{Data: data}, nil
+	out := make([]int, len(data))
+	for i, b := range data {
+		out[i] = int(b)
+	}
+	return nil, I2CReadOutput{Data: out}, nil
 }
 
 type I2CWriteInput struct {
-	Addr byte   `json:"addr" jsonschema:"7-bit I2C device address (0-127)"`
-	Reg  byte   `json:"reg" jsonschema:"register address to write to"`
-	Data []byte `json:"data" jsonschema:"bytes to write"`
+	Addr byte  `json:"addr" jsonschema:"7-bit I2C device address (0-127)"`
+	Reg  byte  `json:"reg" jsonschema:"register address to write to"`
+	Data []int `json:"data" jsonschema:"bytes to write (each 0-255)"`
 }
 type I2CWriteOutput struct {
 	OK bool `json:"ok"`
 }
 
 func i2cWriteHandler(ctx context.Context, req *mcp.CallToolRequest, input I2CWriteInput) (*mcp.CallToolResult, I2CWriteOutput, error) {
-	if err := WriteI2C(input.Addr, input.Reg, input.Data); err != nil {
+	data := make([]byte, len(input.Data))
+	for i, v := range input.Data {
+		if v < 0 || v > 255 {
+			return nil, I2CWriteOutput{}, fmt.Errorf("data[%d] out of byte range (0-255): %d", i, v)
+		}
+		data[i] = byte(v)
+	}
+	if err := WriteI2C(input.Addr, input.Reg, data); err != nil {
 		return nil, I2CWriteOutput{}, err
 	}
 	return nil, I2CWriteOutput{OK: true}, nil
