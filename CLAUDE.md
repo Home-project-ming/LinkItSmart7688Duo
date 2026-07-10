@@ -13,7 +13,7 @@ The LinkIt Smart 7688 **Duo** carries **two independent processors** that talk t
 | Chip | MediaTek MT7688AN (MIPS24KEc @ 580 MHz) | Microchip ATmega32U4 (AVR @ 16 MHz) |
 | Runs | OpenWrt-based Linux ("LinkIt Smart 7688" firmware) | Bare-metal / Arduino firmware (Leonardo/Yún-class) |
 | Role | Networking, WiFi, USB host, SD, compute, services | Real-time GPIO, ADC, sensors, PWM, timing |
-| Code lives in | (TODO: e.g. `mt7688/`, `services/`) | (TODO: e.g. `firmware/`, `sketch/`) |
+| Code lives in | `mt7688-mcp-server/` (MCP server) | (TODO: e.g. `firmware/`, `sketch/`) |
 | Language | Python / Node.js / shell / C | Arduino C++ (`.ino` / C++) |
 
 **The bridge is the point of the "Duo".** The two chips are wired together by a UART. Anything the Arduino side senses or actuates reaches the network/services only by passing bytes across this link, and vice versa. When designing or debugging, always ask *which side owns this* and *what crosses the bridge*.
@@ -29,7 +29,10 @@ Access is over SSH; the board default is user `root` at `mylinkit.local` (or `19
 - **On-device package management:** `opkg update` / `opkg install <pkg>`. Runtimes commonly available: Python, Node.js, plus busybox userland. TODO: pin which runtimes/versions this project targets.
 - **Deploy to board:** typically `scp`/`rsync` over SSH, or an on-device git checkout. TODO: record the real deploy command once chosen.
 - **Cross-compiling C for MIPS** (only if native/opkg is insufficient): use the LinkIt 7688 / OpenWrt SDK toolchain (`mipsel-openwrt-linux-*`). TODO: document the toolchain path and build invocation if this project ships compiled binaries.
-- **Run / test / lint:** TODO — no test or lint tooling configured yet. Add the exact commands (including how to run a *single* test) when the harness exists.
+- **Run / test / lint (MCP server, `mt7688-mcp-server/`):**
+  - Test: `go test ./...` (single test: `go test ./... -run TestName -v`)
+  - Build for the board: `.\build.ps1` (cross-compiles `GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0`)
+  - Deploy: `.\deploy.ps1` (ships to `/usr/local/bin/mcp-server` via `scp -O`)
 
 ## Working on the ATmega32U4 (Arduino) side
 
