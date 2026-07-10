@@ -6,6 +6,7 @@ provisioning/lib/keys/*
 
 # Go build artifacts
 mt7688-mcp-server/mcp-server
+mt7688-mcp-server/mt7688-mcp-server
 mt7688-mcp-server/*.exe
 
 # Worktrees (if the git-fallback worktree mechanism is used)
