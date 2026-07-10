@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # apcli0 (the STA/uplink radio) is dual-homed onto 'lan' via option network
 # 'lan' on its wifi-iface in /etc/config/wireless - that's what actually put it
 # in br-lan (not /etc/config/network's ifname list), and what closes the

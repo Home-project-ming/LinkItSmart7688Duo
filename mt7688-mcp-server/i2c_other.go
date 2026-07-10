@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
+
 //go:build !linux
 
 package main

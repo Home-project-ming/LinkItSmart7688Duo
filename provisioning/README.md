@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan) -->
+
 # provisioning/
 
 Every script actually run against the board, in the order it was run. Kept so the

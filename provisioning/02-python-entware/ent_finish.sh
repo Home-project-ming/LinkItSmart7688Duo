@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Wire Entware into PATH + boot, then prove pip can reach PyPI.
 
 echo "=== 1. PATH in /etc/profile ==="

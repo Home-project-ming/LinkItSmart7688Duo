@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== who calls kmodloader with modules-boot.d ? ==="
 grep -rs 'modules-boot' /etc/ /lib/ /sbin/ /usr/ 2>/dev/null | head -20
 echo "(end grep modules-boot)"

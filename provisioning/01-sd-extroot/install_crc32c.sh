@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== install crc32c modules ==="
 opkg install /tmp/kmod-crypto-crc32c_3.18.23-1_ramips_24kec.ipk 2>&1
 opkg install /tmp/kmod-lib-crc32c_3.18.23-1_ramips_24kec.ipk 2>&1

@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Approved: append Entware to PATH in /etc/profile. Does NOT touch /etc/rc.local.
 
 echo "=== 1. /etc/profile before ==="

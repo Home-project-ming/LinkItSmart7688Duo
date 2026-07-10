@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Quantify: how often do Entware (glibc) binaries die, vs busybox (uClibc)?
 
 trial() {   # trial <label> <n> <cmd...>

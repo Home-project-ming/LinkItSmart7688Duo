@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== Entware opkg works? ==="
 /opt/bin/opkg --version 2>&1 | head -1
 

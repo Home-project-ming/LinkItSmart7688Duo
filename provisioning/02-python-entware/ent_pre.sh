@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== /opt state ==="
 if [ -e /opt ]; then ls -ld /opt; readlink /opt 2>/dev/null; else echo "(/opt does not exist - good, installer will create it)"; fi
 

@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan) -->
+
 # MCP server for board hardware control — design
 
 Status: implemented, verified live on real hardware 2026-07-10

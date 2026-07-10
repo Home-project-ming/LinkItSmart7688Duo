@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== uptime (confirm we really rebooted) ==="
 uptime
 

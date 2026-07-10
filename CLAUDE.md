@@ -1,3 +1,5 @@
+<!-- Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan) -->
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

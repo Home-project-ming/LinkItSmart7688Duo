@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Diagnose why mounting the ext4 SD card hangs.
 
 echo "=== ext in /proc/filesystems ==="

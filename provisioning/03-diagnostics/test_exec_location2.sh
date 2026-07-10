@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Same binary, three storage locations. Keep the filename 'busybox' so the
 # multi-call dispatch on argv[0] still works (previous run's rc=127 bug).
 

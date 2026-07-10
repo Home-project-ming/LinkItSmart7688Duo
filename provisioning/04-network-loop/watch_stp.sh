@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Poll br-lan's per-port STP state straight from sysfs every 2s (no brctl
 # dependency - it may not be installed). State values per the kernel bridge
 # driver: 0=disabled 1=listening 2=learning 3=forwarding 4=blocking.

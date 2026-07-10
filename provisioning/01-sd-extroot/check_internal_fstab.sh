@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Mount the INTERNAL jffs2 overlay read-only and inspect the fstab that
 # preinit actually reads when deciding whether to do extroot.
 

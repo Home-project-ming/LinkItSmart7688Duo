@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Robust check: is the mountd daemon actually running?
 # (avoid pgrep -f, which matches our own command line)
 

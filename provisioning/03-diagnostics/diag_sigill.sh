@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 export PATH=/opt/bin:/opt/sbin:$PATH
 
 echo "=== A. faulthandler traceback on: import virtualenv ==="

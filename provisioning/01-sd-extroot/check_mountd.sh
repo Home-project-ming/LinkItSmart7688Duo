@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== /etc/config/mountd ==="
 cat /etc/config/mountd 2>/dev/null || echo "(no uci config)"
 

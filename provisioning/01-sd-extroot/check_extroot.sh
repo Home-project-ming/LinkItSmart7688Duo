@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== block-mount deps present? ==="
 opkg list-installed | grep -e '^ubox ' -e '^libubox ' -e '^libuci ' -e '^libc ' -e '^block-mount '
 echo "(end)"

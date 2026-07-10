@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
+
 # Cross-compiles the MCP server for the board (mipsel, soft-float,
 # statically linked). $env: assignments write straight to the process
 # environment block - unlike regular PowerShell variables they are NOT

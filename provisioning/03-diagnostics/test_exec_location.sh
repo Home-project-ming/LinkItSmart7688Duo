@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Controlled experiment: SAME binary, three storage locations.
 # Isolates "where the executable lives" from "which binary it is".
 

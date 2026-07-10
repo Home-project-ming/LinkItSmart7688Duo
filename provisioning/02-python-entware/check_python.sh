@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== arch / endianness ==="
 uname -m
 echo -n "ELF header of /bin/busybox: "

@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # br-lan bridges eth0 + apcli0, both reaching the same upstream router, with STP
 # off - that's a guaranteed broadcast storm whenever both paths are up at once.
 # This finds the actual UCI bridge section (doesn't assume it's called 'lan')

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
+
 # Ships .\mcp-server to the board's normal SD-backed /usr/local/bin/.
 # Run .\build.ps1 first.
 #

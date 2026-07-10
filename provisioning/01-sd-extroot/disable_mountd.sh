@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 echo "=== before ==="
 mount | grep -c mmcblk0p1
 mount | grep mmcblk0p1

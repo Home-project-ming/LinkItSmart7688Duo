@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Re-sync /overlay -> SD so the SD copy includes /etc/config/fstab and S40fstab.
 set -e
 

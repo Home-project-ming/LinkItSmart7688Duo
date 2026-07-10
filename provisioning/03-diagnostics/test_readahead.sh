@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Refined hypothesis: the mmap/readahead page-fault path from ext4 on mtk-sd
 # delivers corrupt pages, while read() does not. Small binaries rarely hit it;
 # python3 (thousands of pages) hits it every time.

@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # READ-ONLY verification. Modifies nothing outside /tmp.
 export PATH=/opt/bin:/opt/sbin:$PATH
 

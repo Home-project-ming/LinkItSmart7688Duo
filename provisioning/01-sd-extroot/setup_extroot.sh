@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Configure extroot: move the OpenWrt overlay onto the SD card.
 # Safe to re-run. Does NOT reboot.
 set -e

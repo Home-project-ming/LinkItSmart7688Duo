@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Decisive test: the SAME inode, reached two ways.
 #   /root/bbtest              -> through overlayfs (upperdir on SD)
 #   /overlay/upper/root/bbtest -> the same file, direct on the ext4 mount

@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
+
 # SSH private keys - never commit these, even to a local-only repo.
 # Pattern-based (not per-filename) so any future/converted key format
 # (.ppk, renamed keys, etc.) is caught too - only .pub files are safe.

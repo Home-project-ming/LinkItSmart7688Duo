@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Hypothesis: SD reads are intermittently corrupt, so demand-paged /opt binaries
 # execute garbage (SIGILL) once their pages are evicted.
 # Test: drop caches, re-read the same bytes, compare checksums.

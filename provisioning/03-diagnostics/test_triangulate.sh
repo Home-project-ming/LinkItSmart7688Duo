@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Triangulate: is the fault "files live on SD" or "Entware glibc"?
 # tmpfs pages are NOT dropped by drop_caches, so RAM-resident copies stay warm.
 #

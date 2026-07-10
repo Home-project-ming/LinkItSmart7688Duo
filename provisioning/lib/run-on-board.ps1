@@ -1,3 +1,5 @@
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
+
 <#
 .SYNOPSIS
     Run a shell script on the LinkIt Smart 7688 Duo, non-interactively.

@@ -1,4 +1,5 @@
 #!/bin/sh
+# Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 # Is the SIGSEGV a virtualenv problem, or are Entware binaries generally unstable?
 
 run() {   # run() <label> <cmd...>
