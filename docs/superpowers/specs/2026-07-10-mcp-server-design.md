@@ -1,7 +1,47 @@
 # MCP server for board hardware control — design
 
-Status: approved, not yet implemented
+Status: implemented, verified live on real hardware 2026-07-10
 Date: 2026-07-10
+
+## Live verification (2026-07-10)
+
+All five tools deployed to the board and exercised through a real MCP client
+session (not just `go test`):
+
+- All five tools (`gpio_read`, `gpio_write`, `gpio_set_direction`,
+  `i2c_read`, `i2c_write`) visible and callable.
+- GPIO blocklist confirmed live: `gpio_read` on pin 21 (console) and pin 12
+  (ATmega bridge UART) both correctly rejected with clear errors.
+- GPIO read/write round-trip confirmed on pin 3 (silkscreened `D13LED` on
+  the MT7688 side, distinct from the ATmega's own onboard LED on its own
+  D13 — a real naming collision between the two chips worth remembering).
+  Visually confirmed by the user: the LED is active-low (`value: false`
+  drives it on, `value: true` off) — write→read round-tripped consistently
+  with what was observed.
+- `i2c_read` confirmed live against a real address on `/dev/i2c-0`. This
+  caught a real bug (below) on first live use.
+- `i2c_write` is verified by code review and unit test only, not live —
+  no I2C device is attached to test against safely, and guessing at an
+  address to write real data to (e.g. `0x50`, a common EEPROM address) was
+  correctly refused rather than risking overwriting unknown device state.
+  Uses the identical fix pattern as the now-live-verified read path. Treat
+  as a known gap, not a blocker — first real `i2c_write` usage against an
+  actual attached device is the remaining verification step.
+
+**Bug found and fixed during live verification:** `I2CReadOutput.Data` and
+`I2CWriteInput.Data` were typed `[]byte`. Go's `encoding/json` always
+marshals/unmarshals `[]byte` as a base64 string, never a JSON array — a
+hardcoded special case the schema generator doesn't account for, so the
+auto-generated schema promised `"type": "array"` while the actual encoder
+produced a string. This didn't surface in `go test` (which never exercises
+real MCP JSON serialization) or in earlier validation-only live calls
+(which return before reaching a real data payload) — only appeared once
+`i2c_read` returned actual non-empty data from real hardware. Fixed by
+retyping both fields to `[]int` and converting to/from `[]byte` at the
+`main.go` boundary (`i2c.go` itself is untyped and untouched), with an
+explicit 0-255 range check on the write path to avoid reintroducing the
+same silent-truncation failure mode the `addr`/`reg` fix (Task 5) already
+closed once this session.
 
 ## Context
 
