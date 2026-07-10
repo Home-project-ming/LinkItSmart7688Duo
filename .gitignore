@@ -1,0 +1,12 @@
+# SSH private keys - never commit these, even to a local-only repo.
+# Pattern-based (not per-filename) so any future/converted key format
+# (.ppk, renamed keys, etc.) is caught too - only .pub files are safe.
+provisioning/lib/keys/*
+!provisioning/lib/keys/*.pub
+
+# Go build artifacts
+mt7688-mcp-server/mcp-server
+mt7688-mcp-server/*.exe
+
+# Worktrees (if the git-fallback worktree mechanism is used)
+.worktrees/

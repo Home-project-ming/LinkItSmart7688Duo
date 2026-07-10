@@ -1,0 +1,891 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LinkIt Smart 7688 Duo — 開發筆記</title>
+<style>
+  /* ---------- tokens ---------- */
+  :root {
+    --paper:   #f1f4f4;
+    --surface: #ffffff;
+    --sunk:    #e8edee;
+    --ink:     #16232a;
+    --ink-soft:#586a71;
+    --ink-faint:#8a999f;
+    --rule:    #d6dedf;
+    --accent:  #2a5c6b;
+    --accent-soft: #e2ecee;
+    --trap:    #9a5b25;
+    --trap-soft:#f6ebe0;
+    --fail:    #a33a31;
+    --pass:    #3e6b4a;
+    --shadow:  0 1px 2px rgba(22,35,42,.05), 0 8px 24px -12px rgba(22,35,42,.18);
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+             "Songti TC", "Noto Serif CJK TC", "Source Han Serif TC", serif;
+    --sans:  -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC",
+             "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    --mono:  ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+             "DejaVu Sans Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:#101719; --surface:#161f23; --sunk:#0c1214;
+      --ink:#e2e9ea; --ink-soft:#96a6ac; --ink-faint:#66777d; --rule:#2a373b;
+      --accent:#74b6c6; --accent-soft:#17292f;
+      --trap:#d79b5f; --trap-soft:#2a2118;
+      --fail:#e28378; --pass:#7cb694;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#101719; --surface:#161f23; --sunk:#0c1214;
+    --ink:#e2e9ea; --ink-soft:#96a6ac; --ink-faint:#66777d; --rule:#2a373b;
+    --accent:#74b6c6; --accent-soft:#17292f;
+    --trap:#d79b5f; --trap-soft:#2a2118;
+    --fail:#e28378; --pass:#7cb694;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"] {
+    --paper:#f1f4f4; --surface:#ffffff; --sunk:#e8edee;
+    --ink:#16232a; --ink-soft:#586a71; --ink-faint:#8a999f; --rule:#d6dedf;
+    --accent:#2a5c6b; --accent-soft:#e2ecee;
+    --trap:#9a5b25; --trap-soft:#f6ebe0;
+    --fail:#a33a31; --pass:#3e6b4a;
+    --shadow:0 1px 2px rgba(22,35,42,.05), 0 8px 24px -12px rgba(22,35,42,.18);
+  }
+
+  /* ---------- base ---------- */
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); line-height: 1.25; letter-spacing: -.01em; }
+  h2 { font-size: 1.45rem; line-height: 1.35; }
+  h3 { font-size: 1.05rem; line-height: 1.45; font-family: var(--sans); font-weight: 650; }
+  p { margin: 0; }
+  a { color: var(--accent); }
+  code, samp { font-family: var(--mono); font-size: .875em; font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: .7rem; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+  hr.rule { height: 1px; background: var(--rule); border: 0; margin: 0; }
+
+  /* ---------- shell: sidebar + content ---------- */
+  .shell { display: grid; grid-template-columns: 15.5rem minmax(0, 1fr); gap: 0; }
+
+  nav.side {
+    position: sticky; top: 0; align-self: start;
+    height: 100vh; overflow-y: auto;
+    border-right: 1px solid var(--rule);
+    background: var(--surface);
+    padding: 2.5rem 1.25rem 3rem;
+    display: flex; flex-direction: column; gap: 1.5rem;
+  }
+  nav.side .brand { display: flex; flex-direction: column; gap: .15rem; }
+  nav.side .brand .t { font-family: var(--serif); font-size: 1.05rem; font-weight: 600; line-height: 1.3; }
+  nav.side .brand .s { font-family: var(--mono); font-size: .66rem; color: var(--ink-faint);
+                       letter-spacing: .08em; text-transform: uppercase; }
+
+  nav.side .group { display: flex; flex-direction: column; gap: .1rem; }
+  nav.side .group > .label {
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-faint);
+    padding: .35rem .5rem; margin-top: .4rem;
+  }
+  nav.side a {
+    display: block; padding: .3rem .5rem; border-radius: 3px;
+    color: var(--ink-soft); text-decoration: none; font-size: .875rem;
+    line-height: 1.5; border-left: 2px solid transparent;
+  }
+  nav.side a:hover { background: var(--sunk); color: var(--ink); }
+  nav.side a.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: var(--accent-soft); font-weight: 600;
+  }
+  nav.side a .chip {
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .06em;
+    padding: .05rem .3rem; border-radius: 2px; margin-left: .35rem;
+    background: var(--trap-soft); color: var(--trap); vertical-align: 1px;
+  }
+
+  main { min-width: 0; }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.75rem 7rem;
+          display: flex; flex-direction: column; gap: 3.5rem; }
+
+  section { display: flex; flex-direction: column; gap: 1.2rem; scroll-margin-top: 1.5rem; }
+  section > p { max-width: 40rem; }
+
+  /* ---------- spec strip ---------- */
+  .spec {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+    gap: 1px; background: var(--rule); border: 1px solid var(--rule);
+    border-radius: 3px; overflow: hidden;
+  }
+  .spec div { background: var(--surface); padding: .7rem .85rem; }
+  .spec dt { font-family: var(--mono); font-size: .66rem; letter-spacing: .1em;
+             text-transform: uppercase; color: var(--ink-faint); margin: 0 0 .2rem; }
+  .spec dd { margin: 0; font-family: var(--mono); font-size: .8rem;
+             font-variant-numeric: tabular-nums; word-break: break-all; }
+
+  /* ---------- result ---------- */
+  .result {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem;
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 3px;
+    padding: 1.4rem; box-shadow: var(--shadow);
+  }
+  .result .n { font-family: var(--mono); font-size: clamp(1.25rem, 3.5vw, 1.8rem);
+               font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .result .before .n { color: var(--ink-faint); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .result .after .n { color: var(--pass); }
+  .result .lbl { font-family: var(--mono); font-size: .66rem; letter-spacing: .1em;
+                 text-transform: uppercase; color: var(--ink-faint); }
+  .result .arrow { color: var(--ink-faint); font-size: 1.4rem; line-height: 1; }
+  .result .after { text-align: right; }
+
+  /* ---------- trace ---------- */
+  .trace { display: flex; flex-direction: column;
+           border-left: 2px solid var(--rule); padding-left: 1.25rem; margin-left: .4rem; }
+  .trace .step { padding-bottom: 1.6rem; position: relative; }
+  .trace .step:last-child { padding-bottom: 0; }
+  .trace .step::before {
+    content: ""; position: absolute; left: calc(-1.25rem - 6px); top: .55rem;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--accent);
+  }
+  .trace .ts { font-family: var(--mono); font-size: .7rem; color: var(--ink-faint);
+               font-variant-numeric: tabular-nums; }
+  .trace h3 { margin: .1rem 0 .4rem; }
+  .trace p { color: var(--ink-soft); max-width: 38rem; }
+
+  /* ---------- traps ---------- */
+  .traps { display: flex; flex-direction: column; gap: 1rem; }
+  .trap {
+    background: var(--surface); border: 1px solid var(--rule);
+    border-left: 3px solid var(--trap); border-radius: 3px;
+    padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .7rem;
+    box-shadow: var(--shadow);
+  }
+  .trap.dead { border-left-color: var(--ink-faint); }
+  .trap h3 { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+  .trap .tag {
+    font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--trap); background: var(--trap-soft); border-radius: 2px;
+    padding: .15rem .45rem; white-space: nowrap;
+  }
+  .trap dl { margin: 0; display: flex; flex-direction: column; gap: .5rem; }
+  .trap dt { font-family: var(--mono); font-size: .64rem; letter-spacing: .11em;
+             text-transform: uppercase; color: var(--ink-faint); margin-bottom: .15rem; }
+  .trap dd { margin: 0; color: var(--ink-soft); font-size: .93rem; }
+  .trap dd.hit { color: var(--fail); font-family: var(--mono); font-size: .81rem; }
+  .trap dd.fix { color: var(--ink); }
+  .trap dd.fix code { color: var(--pass); font-weight: 600; }
+
+  /* ---------- code / tables ---------- */
+  pre {
+    margin: 0; background: var(--sunk); border: 1px solid var(--rule); border-radius: 3px;
+    padding: .85rem 1rem; overflow-x: auto; font-family: var(--mono);
+    font-size: .79rem; line-height: 1.7; font-variant-numeric: tabular-nums; color: var(--ink);
+  }
+  pre .c { color: var(--ink-faint); }
+  pre .bad { color: var(--fail); }
+  pre .ok { color: var(--pass); }
+
+  .scroller { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .89rem; }
+  th, td { text-align: left; padding: .5rem .7rem; border-bottom: 1px solid var(--rule);
+           vertical-align: top; }
+  th { font-family: var(--mono); font-size: .64rem; letter-spacing: .1em;
+       text-transform: uppercase; color: var(--ink-faint); font-weight: 500; }
+  td code { font-size: .81rem; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  /* ---------- callouts ---------- */
+  .callout {
+    background: var(--accent-soft); border: 1px solid var(--rule); border-radius: 3px;
+    padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .6rem;
+  }
+  .callout h3 { color: var(--accent); }
+  .callout p { color: var(--ink-soft); font-size: .93rem; }
+
+  .callout.warn { background: var(--trap-soft); border-color: var(--trap); }
+  .callout.warn h3 { color: var(--trap); }
+
+  .status {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .08em;
+    text-transform: uppercase; padding: .2rem .5rem; border-radius: 2px;
+    border: 1px solid currentColor;
+  }
+  .status.ok { color: var(--pass); }
+  .status.partial { color: var(--trap); }
+  .status.blocked { color: var(--fail); }
+
+  footer { color: var(--ink-faint); font-size: .8rem; font-family: var(--mono);
+           border-top: 1px solid var(--rule); padding-top: 1.4rem; line-height: 1.8; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 60rem) {
+    .shell { grid-template-columns: 1fr; }
+    nav.side {
+      position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule);
+      padding: 1.25rem 1rem;
+    }
+    nav.side .groups { display: flex; gap: .5rem; overflow-x: auto; padding-bottom: .25rem; }
+    nav.side .group { flex-direction: row; gap: .25rem; }
+    nav.side .group > .label { display: none; }
+    nav.side a { white-space: nowrap; border-left: 0; border-bottom: 2px solid transparent; }
+    nav.side a.active { border-left: 0; border-bottom-color: var(--accent); }
+  }
+  @media (max-width: 32rem) {
+    .result { grid-template-columns: 1fr; }
+    .result .after { text-align: left; }
+    .result .arrow { transform: rotate(90deg); width: 1.4rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="side" aria-label="章節導航">
+  <div class="brand">
+    <span class="t">LinkIt Smart 7688 Duo</span>
+    <span class="s">開發筆記</span>
+  </div>
+  <div class="groups">
+    <div class="group">
+      <span class="label">概觀</span>
+      <a href="#board">板子規格</a>
+    </div>
+    <div class="group">
+      <span class="label">SD 卡 extroot</span>
+      <a href="#extroot-result">結果</a>
+      <a href="#chain">三層根因</a>
+      <a href="#trap-tooling">坑 · 工具鏈</a>
+      <a href="#trap-board">坑 · 板子環境</a>
+      <a href="#trap-extroot">坑 · extroot</a>
+      <a href="#trap-verify">坑 · 驗證方法</a>
+      <a href="#extroot-final">套件與還原</a>
+    </div>
+    <div class="group">
+      <span class="label">Python</span>
+      <a href="#uv">為什麼 uv 不行</a>
+      <a href="#entware">Entware 路線</a>
+      <a href="#python-result">安裝結果</a>
+      <a href="#sigill">SD 執行不穩<span class="chip">未解</span></a>
+      <a href="#python-usable">現在能用嗎</a>
+    </div>
+    <div class="group">
+      <span class="label">區網迴圈</span>
+      <a href="#loop-result">結果</a>
+      <a href="#loop-chain">找出真正的橋接成員</a>
+      <a href="#loop-stp">為什麼 STP 救不了</a>
+    </div>
+    <div class="group">
+      <span class="label">附錄</span>
+      <a href="#files">檔案與腳本</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:1rem;">
+  <span class="eyebrow">現場筆記 · 最後更新 2026-07-10</span>
+  <h1>把一塊 2016 年的 OpenWrt 板子養成能用的開發環境</h1>
+  <p style="color:var(--ink-soft);font-size:1.05rem;max-width:38rem;">
+    兩段工作:先把根檔案系統從 9.8 MB 的內建 flash 搬到 128 GB 的 SD 卡,
+    再在上面裝現代 Python。過程中撞到十幾個坑、三個自己製造的假訊號,
+    以及一個到現在還沒解決的硬體層問題。這裡記錄每一個。
+  </p>
+</header>
+
+<section id="board">
+  <span class="eyebrow">概觀</span>
+  <h2>這塊板子是什麼</h2>
+  <dl class="spec">
+    <div><dt>SoC</dt><dd>MediaTek MT7688 · MIPS 24KEc</dd></div>
+    <div><dt>Arch</dt><dd>mipsel 32-bit · soft-float</dd></div>
+    <div><dt>FPU</dt><dd>無</dd></div>
+    <div><dt>Firmware</dt><dd>OpenWrt 15.05.1</dd></div>
+    <div><dt>Kernel</dt><dd>3.18.23</dd></div>
+    <div><dt>系統 libc</dt><dd>uClibc 0.9.33.2</dd></div>
+    <div><dt>RAM</dt><dd>126 MB · 無 swap</dd></div>
+    <div><dt>SD</dt><dd>116 GiB SDXC · ext4</dd></div>
+  </dl>
+  <p>
+    這幾個數字解釋了後面所有的困難。<strong>mipsel</strong> 讓大部分預編譯的現代工具直接出局;
+    <strong>uClibc</strong> 讓 glibc 的東西不能直接跑;<strong>126 MB 且沒有 swap</strong>
+    讓 page cache 一定會被驅逐 —— 那正是最後那個 bug 的觸發條件。
+  </p>
+</section>
+
+<hr class="rule">
+
+<section id="extroot-result">
+  <span class="eyebrow">SD 卡 extroot</span>
+  <h2>結果 <span class="status ok">已完成</span></h2>
+  <div class="result">
+    <div class="before">
+      <div class="lbl">Before · jffs2 on flash</div>
+      <div class="n">9.8 MB</div>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="after">
+      <div class="lbl">After · ext4 on SD</div>
+      <div class="n">108.3 GB</div>
+    </div>
+  </div>
+  <p>根檔案系統可用空間增加約 <strong>11,000 倍</strong>。兩次重啟驗證,寫入的測試檔跨重啟存活。</p>
+</section>
+
+<section id="chain">
+  <h2>三層根因,不是一個</h2>
+  <p>
+    最初的症狀是 <code>ls /Media/SD-P1</code> 回報
+    <code>Too many levels of symbolic links</code> —— 一個完全誤導的訊息,
+    它只是 autofs 掛載失敗後留下的懸空 symlink。往下每挖一層,才露出真正的原因。
+  </p>
+  <div class="trace">
+    <div class="step">
+      <div class="ts">層 1 · 分割區類型 0x83</div>
+      <h3>卡是 ext4,但核心不認得 ext4</h3>
+      <p>
+        MBR 偏移 450 的類型位元組是 <code>0x83</code>(Linux),superblock 偏移 1080 的 magic 是
+        <code>53 ef</code>。但 <code>/proc/filesystems</code> 只有 squashfs、jffs2、overlay、exfat、vfat。
+      </p>
+      <pre><span class="c"># mount -t ext4 /dev/mmcblk0p1 /mnt/sd</span>
+<span class="bad">failed: No such device</span>   <span class="c">← 核心根本沒有 ext4 這個 fs type</span></pre>
+    </div>
+    <div class="step">
+      <div class="ts">層 2 · metadata_csum</div>
+      <h3>裝完 ext4 後,<code>mount</code> 改成「無回應」</h3>
+      <p>
+        現代 <code>mkfs.ext4</code> 預設啟用 <code>metadata_csum</code>,掛載時需要 crc32c,
+        而 <code>kmod-fs-ext4</code> <strong>不會</strong>把它拉進來。核心卡在
+        <code>request_module("crc32c")</code> 等逾時 —— 指令看起來就是死當,毫無訊息。
+        真相只在 dmesg 裡:
+      </p>
+      <pre><span class="bad">EXT4-fs (mmcblk0p1): Cannot load crc32c driver.</span></pre>
+    </div>
+    <div class="step">
+      <div class="ts">[ 10.980000] mount_root</div>
+      <h3>extroot 需要模組在 preinit 就位</h3>
+      <p>
+        <code>/lib/libfstools.so</code> 內含字串 <code>/sbin/kmodloader %s/etc/modules-boot.d/</code> ——
+        <code>mount_root</code> 會自己載入 <code>modules-boot.d</code> 的模組,早於 extroot。
+        opkg 安裝 kmod 時已自動建好那些 symlink,這層剛好免費過關。
+      </p>
+      <pre><span class="c">[  9.860000]</span> mount_root: loading kmods from internal overlay
+<span class="c">[ 10.960000]</span> EXT4-fs (mmcblk0p1): mounted filesystem with ordered data mode
+<span class="c">[ 10.980000]</span> <span class="ok">mount_root: switched to extroot</span></pre>
+    </div>
+  </div>
+</section>
+
+<section id="trap-tooling">
+  <h2>坑 · 從 Windows 連進去就先摔三次</h2>
+  <div class="traps">
+
+    <div class="trap">
+      <h3>mDNS 解析優先給 IPv6 <span class="tag">假訊號</span></h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">ping mylinkit.local → Reply from fe80::9e65:f9ff:fe1d:6a92</dd></div>
+        <div><dt>原因</dt><dd><code>mylinkit.local</code> 同時有 A 和 AAAA 記錄,Windows 偏好 IPv6 link-local,你完全看不到 IPv4 位址。</dd></div>
+        <div><dt>解法</dt><dd class="fix">用 <code>ping -4</code> 或 <code>Resolve-DnsName</code>。順帶一提,link-local
+          <code>fe80::9e65:f9ff:fe1d:6a92</code> 是 MAC <code>9c:65:f9:1d:6a:92</code> 以 EUI-64 推導而來
+          (<code>9c</code> 翻轉 U/L bit 成 <code>9e</code>,中間插 <code>ff:fe</code>)—— 可用來確認是同一台裝置。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>Dropbear 沒有 sftp-server</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">ash: /usr/libexec/sftp-server: not found</dd></div>
+        <div><dt>原因</dt><dd>OpenWrt 用 Dropbear,不提供 SFTP 子系統。而 <code>pscp</code> 預設走 SFTP。</dd></div>
+        <div><dt>解法</dt><dd class="fix">加 <code>-scp</code> 強制舊版 SCP 協定。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>plink 的 host key 提示會掛住</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">"y`n" | plink … → 永遠不返回</dd></div>
+        <div><dt>原因</dt><dd>把 <code>y</code> 用管線餵進去並不可靠;而 <code>-batch</code> 遇到未快取的金鑰會直接放棄。</dd></div>
+        <div><dt>解法</dt><dd class="fix">先故意用 <code>-batch</code> 失敗一次,它會把指紋印在錯誤訊息裡;之後每次都明確帶 <code>-hostkey SHA256:…</code>。全程非互動,且不降低安全性。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>PowerShell 會吃掉傳給原生程式的雙引號 <span class="tag">最耗時</span></h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">ash: crc16: not found　/　ash: syntax error: unterminated quoted string</dd></div>
+        <div><dt>原因</dt><dd>PowerShell 把參數傳給 <code>plink.exe</code> 時會剝掉內嵌的雙引號,於是遠端 <code>ash</code> 看到裸的 <code>|</code> 並當成管線;<code>$</code> 的跳脫也會被二次解讀。這個坑在整個過程中反覆咬人。</dd></div>
+        <div><dt>解法</dt><dd class="fix">不要在命令列裡塞遠端 shell 腳本。改成
+          <strong>本機寫 <code>.sh</code> → 轉 LF → <code>pscp</code> → <code>plink "sh /tmp/x.sh"</code></strong>。
+          這個模式已經固化成 <code>provisioning/lib/run-on-board.ps1</code>。</dd></div>
+      </dl>
+    </div>
+
+  </div>
+</section>
+
+<section id="trap-board">
+  <h2>坑 · 2016 年的 OpenWrt,基礎設施都鏽了</h2>
+  <div class="traps">
+
+    <div class="trap">
+      <h3><code>opkg update</code> 的簽章驗證已失效</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">Signature check failed. Remove wrong Signature file.</dd></div>
+        <div><dt>原因</dt><dd><code>Packages.gz</code> 抓得到,但 archive 伺服器的 <code>.sig</code> 對不上韌體內建金鑰,清單被整包丟棄。</dd></div>
+        <div><dt>解法</dt><dd class="fix">不要動 <code>check_signature</code>。改成<strong>側載</strong>:在 PC 上從 <code>archive.openwrt.org</code> 下載 <code>.ipk</code>,傳到板子後 <code>opkg install /tmp/xxx.ipk</code> —— 本機 ipk 安裝不經過清單簽章檢查。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>板子的 busybox <code>wget</code> 沒有 SSL</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">wget: can't execute 'openssl': No such file or directory</dd></div>
+        <div><dt>原因</dt><dd>下載站已強制 https,而 busybox wget 需要外部 <code>openssl</code> helper。(弔詭的是 <code>opkg</code> 自己抓得到,它走不同的 fetcher。)</dd></div>
+        <div><dt>解法</dt><dd class="fix">所有下載都在 PC 端做,再 <code>pscp</code> 推上去。Entware 的 installer 剛好全走 plain <code>http://</code>,所以能直接在板子上跑。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>沒有 <code>od</code>、<code>fdisk</code>、<code>blkid</code></h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">ash: od: not found　/　ash: fdisk: not found</dd></div>
+        <div><dt>原因</dt><dd>精簡 busybox。<code>block info</code> 要裝了 <code>block-mount</code> 才有,但那時你正需要它來判斷檔案系統。</dd></div>
+        <div><dt>解法</dt><dd class="fix">用 <code>dd</code> + <code>hexdump</code> 直接讀特徵位元組。MBR 類型位元組在偏移 <code>450</code>;ext 的 magic <code>53 ef</code> 在分割區偏移 <code>1080</code>,磁碟區標籤在 <code>1144</code>。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>kmod 的 vermagic 必須逐字相符</h3>
+      <dl>
+        <div><dt>原因</dt><dd>每個 <code>kmod-*</code> 都硬相依 <code>kernel (=3.18.23-1-&lt;md5&gt;)</code>。韌體若是客製 build,官方 feed 的模組就用不了。</dd></div>
+        <div><dt>解法</dt><dd class="fix">先比對再下載。板子:<code>opkg list-installed | grep ^kernel</code>;feed:解開 <code>Packages.gz</code> 看 <code>Depends</code>。本例兩邊都是 <code>32322c69cacfebf6e22f4e61cea9bebc</code>,所以能用。</dd></div>
+      </dl>
+    </div>
+
+  </div>
+</section>
+
+<section id="trap-extroot">
+  <h2>坑 · 設定寫對了,還是可能悄悄失效</h2>
+  <div class="traps">
+
+    <div class="trap">
+      <h3>複製 overlay 的時機:先寫 fstab,再複製 <span class="tag">我犯過</span></h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">重啟後 /etc/config/fstab 是空的(但 extroot 竟然仍生效)</dd></div>
+        <div><dt>原因</dt><dd>先把 <code>/overlay</code> 複製到 SD,之後才寫 <code>fstab</code>,於是 SD 上那份 <code>upper/</code> 沒有它。開機仍生效是因為 preinit 讀的是<strong>內建 flash</strong> 那份。</dd></div>
+        <div><dt>解法</dt><dd class="fix">順序:裝好所有套件 → 寫 <code>fstab</code> → <em>最後</em>才 <code>tar</code> 複製 overlay。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3><code>fstab</code> 有兩份,開機讀的不是你在改的那份 <span class="tag">長期陷阱</span></h3>
+      <dl>
+        <div><dt>原因</dt><dd>extroot 的判斷發生在 preinit,那時 SD 還沒掛上,<code>/sbin/block</code> 只能從內建 jffs2(<code>/dev/mtdblock6</code>)的 <code>upper/etc/config/fstab</code> 讀設定。extroot 生效後你看到的 <code>/etc/config/fstab</code> 其實住在 SD 上,<strong>改它不影響開機</strong>。</dd></div>
+        <div><dt>解法</dt><dd class="fix">要改開機行為,得掛內建那份:
+<pre>mkdir -p /tmp/i &amp;&amp; mount -t jffs2 /dev/mtdblock6 /tmp/i
+vi /tmp/i/upper/etc/config/fstab
+umount /tmp/i</pre></dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3><code>mountd</code> 會把 SD 重複掛載一次</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">/dev/mmcblk0p1 同時出現在 /overlay 和 /tmp/run/mountd/mmcblk0p1</dd></div>
+        <div><dt>原因</dt><dd>LinkIt 韌體的 <code>S80mountd</code> 在 extroot 之後才啟動,不知道該裝置已被徵用,於是又掛到 <code>/Media/SD-P1</code>。結果是<strong>整個 rootfs 透過 samba 分享出去</strong>。它的 uci 設定只有 <code>timeout</code> 和 <code>path</code>,<em>沒有黑名單</em> —— <code>mmcblk</code> 寫死在二進位檔裡。</dd></div>
+        <div><dt>解法</dt><dd class="fix"><code>/etc/init.d/mountd disable</code> 然後重啟。代價是 USB 磁碟不再自動掛載。另外 <code>stop</code> 殺不掉 daemon,只有 <code>disable</code> + 重啟有效。</dd></div>
+      </dl>
+    </div>
+
+  </div>
+</section>
+
+<section id="trap-verify">
+  <h2>坑 · 驗證方法本身 —— 三個自己製造的假訊號</h2>
+  <p>
+    這一節值得單獨列出來。整個過程中,<strong>誤導我最久的不是板子,是我自己寫的檢查</strong>。
+  </p>
+  <div class="traps">
+
+    <div class="trap">
+      <h3><code>pgrep -f</code> 會比對到自己的命令列 <span class="tag">假陽性</span></h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">pgrep -f /sbin/mountd → "STILL RUNNING"(其實根本沒在跑)</dd></div>
+        <div><dt>原因</dt><dd>連中兩次。<code>pgrep -f</code> 比對完整命令列,而<em>執行這個檢查的那條 SSH 命令列本身</em>就含有 <code>/sbin/mountd</code> 字串。同理 <code>ps w | grep mountd</code> 也會撈到名為 <code>disable_mountd.sh</code> 的腳本。</dd></div>
+        <div><dt>解法</dt><dd class="fix">用 <code>pgrep -x</code>、<code>ps w | grep '[m]ountd'</code>,或直接讀 <code>/proc/*/exe</code>。最乾淨的是把檢查放進腳本檔,讓命令列裡不出現那個字串。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>管線後面的 <code>$?</code> 是 <code>tail</code> 的離開碼</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">python3 -m virtualenv … | tail -6 ; echo rc=$?  →  rc=0(其實 segfault 了)</dd></div>
+        <div><dt>原因</dt><dd>寫成 <code>cmd | tail</code> 之後再讀 <code>$?</code>,拿到的是管線<em>最後一個</em>指令的結果。真正崩潰的程式被完全掩蓋。</dd></div>
+        <div><dt>解法</dt><dd class="fix">先 <code>cmd &gt;log 2&gt;&amp;1</code> 再讀 <code>$?</code>。並且把訊號翻譯出來:<code>132</code>=SIGILL、<code>138</code>=SIGBUS、<code>139</code>=SIGSEGV。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>busybox 靠 <code>argv[0]</code> 決定 applet <span class="tag">害我推翻對的假設</span></h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">cp busybox bb_sd; ./bb_sd true → rc=127,看起來像「從 SD 執行會失敗」</dd></div>
+        <div><dt>原因</dt><dd>busybox 是 multi-call 二進位檔。改了檔名,它就找不到對應 applet 而回 127 —— 那不是崩潰。我拿這個結果去「證偽」了一個其實正確的方向,浪費了一輪。</dd></div>
+        <div><dt>解法</dt><dd class="fix">複製 busybox 做對照時<strong>保留檔名</strong>,只改目錄。並且永遠區分 <code>rc=127</code>(找不到)與 <code>rc≥128</code>(被訊號殺死)。</dd></div>
+      </dl>
+    </div>
+
+  </div>
+</section>
+
+<section id="extroot-final">
+  <h2>套件清單與還原方式</h2>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>套件</th><th>為什麼需要</th></tr></thead>
+      <tbody>
+        <tr><td><code>kmod-crypto-core</code></td><td>crypto API 基礎</td></tr>
+        <tr><td><code>kmod-crypto-hash</code></td><td>ext4 相依</td></tr>
+        <tr><td><code>kmod-crypto-crc32c</code></td><td><strong>metadata_csum 的關鍵</strong> —— 缺了 mount 會卡死</td></tr>
+        <tr><td><code>kmod-lib-crc16</code></td><td>ext4 相依</td></tr>
+        <tr><td><code>kmod-lib-crc32c</code></td><td>libcrc32c</td></tr>
+        <tr><td><code>kmod-fs-ext4</code></td><td>ext4 本體</td></tr>
+        <tr><td><code>block-mount</code></td><td>提供 <code>/sbin/block</code> 與 extroot 邏輯</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <pre>config mount
+        option target  '/overlay'
+        option uuid    'a8a9d5f7-91ee-492f-b6c6-b16422b65f7a'
+        option enabled '1'
+
+config global
+        option delay_root '10'   <span class="c">← 等 SDXC 列舉完成</span>
+        option check_fs   '0'    <span class="c">← 沒裝 e2fsprogs,別叫它 fsck</span></pre>
+
+  <div class="callout">
+    <h3>要取消?拔掉 SD 卡開機就好</h3>
+    <p><code>mount_root</code> 找不到裝置會自動退回內建 jffs2 overlay,板子照常開機。內建 flash 的原始資料從頭到尾沒有被改動,只是被複製出去。</p>
+    <p><code>/overlay/etc/.extroot-uuid</code> 由 <code>block</code> 自動建立,內容是 rootfs(<code>mtdblock5</code>)的 UUID。它防止你把別台機器的 SD 卡插進來當 overlay。</p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="uv">
+  <span class="eyebrow">Python</span>
+  <h2>為什麼 uv 裝不上去 <span class="status blocked">放棄</span></h2>
+  <p>這不是設定問題,是根本沒有這個二進位檔。三層都不通:</p>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>層</th><th>事實</th></tr></thead>
+      <tbody>
+        <tr><td>官方發行檔</td><td>uv 0.11.28 的 19 個 asset 涵蓋 aarch64、armv7、i686、ppc64le、riscv64、s390x、x86_64 —— <strong>沒有任何 MIPS 目標</strong></td></tr>
+        <tr><td>就算有</td><td>uv 需要 Python ≥ 3.8;板子上是 2.7.9,OpenWrt feed 最高 3.4.3。<code>uv python install</code> 抓的 python-build-standalone 同樣沒有 MIPS build</td></tr>
+        <tr><td>自己編</td><td><code>mipsel-unknown-linux-musl</code> 自 Rust 1.72 起降為 Tier 3,沒有預編譯 std,要 nightly + <code>-Z build-std</code>。另外預期會撞上 MIPS32 缺 64-bit 原子指令、以及 TLS 後端(<code>aws-lc-rs</code>/<code>ring</code>)沒有 MIPS 支援 —— <em>這兩點未經實測</em></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="entware">
+  <h2>Entware:唯一可行的現代 Python 路線</h2>
+  <p>
+    Entware 有 <code>mipselsf-k3.4</code> 這個 target —— soft-float mipsel、kernel ≥ 3.4,
+    正好對上這塊板子。它<strong>自帶 glibc 2.27 和自己的 loader <code>/opt/lib/ld.so.1</code></strong>,
+    跟系統的 uClibc 完全隔離,互不污染。這就是它能在 2016 年韌體上跑 2026 年套件的原因。
+  </p>
+  <p>
+    它裝在 <code>/opt</code>,而 <code>/opt</code> 現在坐落於 extroot 的 SD 上 ——
+    <strong>沒有先做 extroot,這一步不可能發生</strong>(52 MB 的 Python 塞不進原本 9.8 MB 的 flash)。
+    也正因為它在 SD 上,才踩到了下面那個問題。
+  </p>
+</section>
+
+<section id="python-result">
+  <h2>安裝結果 <span class="status partial">可用但不穩</span></h2>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>項目</th><th>版本 / 結果</th></tr></thead>
+      <tbody>
+        <tr><td>Python</td><td class="num">3.13.9</td></tr>
+        <tr><td>pip</td><td class="num">23.3.1</td></tr>
+        <tr><td>OpenSSL</td><td class="num">3.5.5</td></tr>
+        <tr><td>從 PyPI 安裝套件</td><td>✅ 實測成功(TLS 正常)</td></tr>
+        <tr><td><code>venv</code> 模組</td><td>❌ Entware 沒有 <code>python3-venv</code>,改用 pip 裝 <code>virtualenv</code></td></tr>
+        <tr><td><code>/opt</code> 佔用</td><td class="num">67 MB</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    意外收穫:Entware 有預編譯的 <code>python3-numpy</code>、<code>python3-cryptography</code>、
+    <code>python3-lxml</code>、<code>python3-pillow</code>。PyPI 上沒有 MIPS wheel,
+    這些重量級 C 擴充如果要自己編,580 MHz 的 24KEc 會編到天荒地老。
+  </p>
+</section>
+
+<section id="sigill">
+  <h2>⚠ 從 SD 執行的 Entware 二進位檔會隨機崩潰 <span class="status blocked">未解</span></h2>
+  <p>
+    這是整個過程中最嚴重的發現,而且它<strong>不是 Python 的問題</strong>。
+    只要 <code>/opt</code> 底下任何執行檔的頁面被逐出 page cache、必須從 SD 重新 fault 回來,
+    就會以 SIGILL / SIGSEGV / SIGBUS 崩潰。這台只有 126 MB RAM 而且<strong>沒有 swap</strong>,
+    所以驅逐是必然會發生的。
+  </p>
+
+  <h3>證據</h3>
+  <p>三向對照,每組在 <code>drop_caches</code> 後冷啟動 10 次:</p>
+  <pre>a) loader + libs + exe 全在 SD        <span class="bad">ok=0/10</span>   ILL=1 BUS=1 SEGV=2 …
+b) 一模一樣的檔案複製到 tmpfs (RAM)   <span class="ok">ok=10/10</span>
+c) loader 在 RAM,libs + exe 在 SD    <span class="bad">ok=0/10</span>
+d) busybox from tmpfs                 <span class="ok">ok=10/10</span>
+e) busybox from flash (squashfs)      <span class="ok">ok=10/10</span></pre>
+  <p>
+    (b) 證明 <strong>glibc 和那些二進位檔本身完全沒問題</strong>。
+    而且用 <code>read()</code> 讀同樣的 bytes 是 <strong>bit-perfect</strong> ——
+    6.4 MB 的函式庫冷快取 md5 八次、raw 分割區 48 MiB 讀四次,checksum 全部相同。
+  </p>
+
+  <div class="callout warn">
+    <h3>資料進到記憶體是對的,執行起來卻是垃圾</h3>
+    <p>
+      這是 I-cache 與 DMA 不一致的典型特徵:<code>read()</code> 走 D-cache 拿到正確資料,
+      而 CPU 執行時從 I-cache 取到的是舊內容。
+    </p>
+    <p>
+      <strong>但我沒有把它證明到 driver 層級</strong>,而且有一個結果與這個理論衝突:
+      420 KB 的 busybox 從同一張 SD 執行,10/10 通過。所以這裡只陳述證據,不宣稱已定位。
+    </p>
+  </div>
+
+  <h3>已排除的可能</h3>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>假設</th><th>如何排除</th></tr></thead>
+      <tbody>
+        <tr><td>SD 卡壞了</td><td><code>read()</code> 與 raw block 讀取的 checksum 完全一致</td></tr>
+        <tr><td>readahead 預讀</td><td><code>read_ahead_kb=0</code> 之後崩潰率毫無變化</td></tr>
+        <tr><td>overlayfs(kernel 3.18 才剛併入)</td><td>繞過 overlayfs、走 <code>/overlay/upper/…</code> 直接的 ext4 路徑,一樣崩</td></tr>
+        <tr><td>記憶體不足 / OOM</td><td>崩潰時 free 有 106 MB;核心日誌沒有 OOM 訊息</td></tr>
+        <tr><td>virtualenv 本身有 bug</td><td><code>grep --version</code>、<code>find --version</code> 這種小工具冷快取下同樣 0/10</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>還沒試的方向</h3>
+  <p>
+    最有希望的是把 <code>/opt</code> 打包成 <strong>squashfs 映像檔放在 SD 上,再 loop-mount</strong>。
+    squashfs 的頁面是 CPU 解壓縮寫進去的,不是 DMA 直接填入被 mmap 的頁面 ——
+    這剛好解釋了為什麼 flash 上的 squashfs(<code>/rom</code>)從來沒出過事。<em>尚未驗證。</em>
+    真正的修復大概是換一版 kernel ≥ 5.x 的現代 OpenWrt。
+  </p>
+</section>
+
+<section id="python-usable">
+  <h2>那現在到底能不能用?</h2>
+  <p>
+    能,但要知道界線。<strong>剛開機、記憶體充裕、頁面還在快取裡的時候,Python 完全正常</strong> ——
+    <code>pip install</code> 連得上 PyPI,<code>virtualenv</code> 建得出環境(實測 16 秒,含 seed pip 26.1.2)。
+    問題出在跑久了、記憶體被別的東西吃掉之後。
+  </p>
+  <p>
+    所以現階段的務實用法是:<strong>把 uv 裝在 PC 上</strong>做依賴解析與鎖版,
+    板子只跑純 Python 程式碼,並且接受它可能需要重試。
+    在上面那個問題解決之前,不要把 <code>/opt</code> 裡的東西放進開機自動啟動的服務 ——
+    這也是為什麼 <code>rc.unslung</code> 那段<strong>刻意沒有</strong>寫進 <code>/etc/rc.local</code>。
+  </p>
+</section>
+
+<hr class="rule">
+
+<section id="loop-result">
+  <span class="eyebrow">區網迴圈</span>
+  <h2>結果 <span class="status ok">已修復</span></h2>
+  <div class="result">
+    <div class="before">
+      <div class="lbl">Before · eth0+apcli0 同時橋接</div>
+      <div class="n">75% 掉包</div>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="after">
+      <div class="lbl">After · apcli0 改掛 wan</div>
+      <div class="n">0 筆迴圈警告</div>
+    </div>
+  </div>
+  <p>
+    插上 eth0 之後,整個區網(不只板子)在幾秒內動不了,拔線才恢復。
+    現場證據(<code>br-lan: received packet on eth0 with own address as
+    source address</code>)證實是 L2 迴圈,不是訊號差。開 STP 沒用——
+    真正的問題出在 <code>/etc/config/wireless</code>,不在
+    <code>/etc/config/network</code>。
+  </p>
+</section>
+
+<section id="loop-chain">
+  <h2>兩次抓錯真正的橋接成員</h2>
+  <p>
+    <code>uci show network</code> 顯示 <code>network.lan.ifname='eth0 ra0'</code>,
+    看起來迴圈的另一邊是 <code>ra0</code>。跟著這個線索開了
+    <code>network.lan.stp</code>、等了 36 秒、還即時盯著 port state——
+    兩個 port 全程停在 <code>state=3</code>(forwarding),完全沒有收斂跡象。
+  </p>
+  <div class="trace">
+    <div class="step">
+      <div class="ts">第二次現場測試 · logread -f</div>
+      <h3>核心自己說出真相</h3>
+      <p>
+        全程開著 <code>logread -f</code> 監控,重連 eth0 的 36 秒內,
+        <code>net_ratelimit</code> 每 5 秒把 400–1000+ 筆重複警告壓下去,
+        而且數字是往上走的——風暴在惡化,不是還沒收斂完。
+      </p>
+      <pre>br-lan: received packet on eth0 with own address as source address</pre>
+    </div>
+    <div class="step">
+      <div class="ts">/sys/class/net/br-lan/brif/</div>
+      <h3>直接讀 sysfs,而不是相信 UCI 設定檔</h3>
+      <p>
+        真正的 bridge 成員清單跟 <code>network.lan.ifname</code> 寫的完全不一樣:
+        是 <code>eth0</code> + <code>apcli0</code>,沒有 <code>ra0</code>。
+        無線介面的 network 歸屬是在 <code>/etc/config/wireless</code> 裡另外指定的
+        (<code>option network</code>),不會反映在 <code>/etc/config/network</code>
+        的 <code>ifname</code> 清單裡——這是 OpenWrt 本來的機制,不是設定寫錯。
+      </p>
+      <pre>config wifi-iface 'sta'
+    option ifname 'apcli0'
+    option network 'lan'   <span class="c">← 就是這行,不在 network.lan.ifname 裡</span></pre>
+    </div>
+    <div class="step">
+      <div class="ts">修復</div>
+      <h3>把 apcli0 搬到已經存在、卻沒人用的 wan</h3>
+      <p>
+        板子上本來就有一個設好 NAT(<code>option masq '1'</code>)、
+        <code>forwarding</code> 也只允許 <code>lan → wan</code> 單向的
+        <code>wan</code> network,只是沒有任何裝置掛在上面。把
+        <code>wireless.sta.network</code> 從 <code>lan</code> 改成
+        <code>wan</code>,<code>apcli0</code> 從 <code>br-lan</code> 消失,
+        迴圈在結構上斷開。改完當下 SSH(走 apcli0)斷線是預期行為,
+        插回 eth0 即可從 <code>lan</code> 重新連上。
+      </p>
+      <pre>uci set wireless.sta.network=wan
+uci commit wireless
+wifi reload</pre>
+    </div>
+    <div class="step">
+      <div class="ts">驗證</div>
+      <h3>9 分鐘沒有新紀錄</h3>
+      <p>
+        插回 eth0 瞬間仍有 13 秒殘留警告(舊 ARP/MAC 快取的過渡效應),
+        之後 <code>date</code> 跟最後一筆警告時間戳相差近 9 分鐘、沒有再出現——
+        跟前兩次「STP 開著也持續惡化」的樣子完全不同,這次是真的停了。
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="loop-stp">
+  <h2>為什麼開 STP 完全沒用</h2>
+  <div class="callout warn">
+    <h3>STP 只能防「兩個都懂 STP 的 bridge」之間的迴圈</h3>
+    <p>
+      802.1D 的迴圈偵測,靠的是所有參與的 bridge 互相交換 BPDU 封包來協商拓樸、
+      決定哪個 port 該進入 <code>blocking</code>。這裡的迴圈是繞經一般家用路由器
+      才接起來的——路由器不懂、也不會轉發 BPDU。對板子自己的 bridge 而言,
+      <code>eth0</code> 跟 <code>apcli0</code> 就是兩條各自獨立、通往不相關網路的線,
+      它沒有任何機制能發現這兩條線其實在外面被接在一起。開 <code>stp</code>、
+      等多久都一樣,不是時間或運氣的問題——這個迴圈的形狀從根本上就不在 STP
+      能處理的範圍內。真正能處理這種「繞經外部裝置接回來」的迴圈,只能從拓樸
+      本身下手:把其中一條路徑改成路由(NAT),而不是繼續橋接。
+    </p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="files">
+  <span class="eyebrow">附錄</span>
+  <h2>檔案與腳本</h2>
+  <p>所有實際跑過的腳本都收在 <code>provisioning/</code>,依執行順序編號。</p>
+  <div class="scroller">
+    <table>
+      <thead><tr><th>路徑</th><th>內容</th></tr></thead>
+      <tbody>
+        <tr><td><code>lib/run-on-board.ps1</code></td><td>把 plink / pscp 那三個坑固化成一個 helper</td></tr>
+        <tr><td><code>01-sd-extroot/</code></td><td>13 個腳本 + 7 個側載 <code>.ipk</code></td></tr>
+        <tr><td><code>02-python-entware/</code></td><td>7 個腳本,含審查過的 Entware installer</td></tr>
+        <tr><td><code>03-diagnostics/</code></td><td>11 個腳本,SIGILL 調查的完整軌跡(含<strong>那個寫壞的測試</strong>,保留作為教訓)</td></tr>
+        <tr><td><code>04-network-loop/</code></td><td>3 個腳本:開 STP(沒用,但留著無害)、輪詢 STP port state、真正的修復(把 apcli0 從 wireless 設定改掛到 wan)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre><span class="c"># 執行任一腳本</span>
+$env:BOARD_PASSWORD = '&lt;password&gt;'
+.\provisioning\lib\run-on-board.ps1 -Script .\provisioning\01-sd-extroot\preflight.sh</pre>
+</section>
+
+<footer>
+  LinkIt Smart 7688 Duo · MT7688AN + ATmega32U4<br>
+  OpenWrt Chaos Calmer 15.05.1 (r49203) · kernel 3.18.23 · mipsel soft-float<br>
+  最後更新 2026-07-10
+</footer>
+
+</div>
+</main>
+</div>
+
+<script>
+  // Highlight the sidebar entry for whichever section is currently in view.
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('nav.side a[href^="#"]'));
+    var byId = {};
+    links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+
+    var targets = Object.keys(byId)
+      .map(function (id) { return document.getElementById(id); })
+      .filter(Boolean);
+
+    if (!('IntersectionObserver' in window) || !targets.length) return;
+
+    var visible = new Set();
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) visible.add(e.target.id);
+        else visible.delete(e.target.id);
+      });
+      // Pick the topmost visible section so the highlight never flickers
+      // between two neighbours during a scroll.
+      var top = null, topY = Infinity;
+      visible.forEach(function (id) {
+        var y = document.getElementById(id).getBoundingClientRect().top;
+        if (y < topY) { topY = y; top = id; }
+      });
+      links.forEach(function (a) { a.classList.remove('active'); });
+      if (top && byId[top]) byId[top].classList.add('active');
+    }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+
+    targets.forEach(function (t) { obs.observe(t); });
+  }());
+</script>
+</body>
+</html>
