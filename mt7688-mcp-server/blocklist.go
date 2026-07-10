@@ -3,6 +3,8 @@ package main
 import "fmt"
 
 var blockedPins = map[int]string{
+	12: "ATmega bridge UART (uartlite, ttyS0)",
+	13: "ATmega bridge UART (uartlite, ttyS0)",
 	20: "console",
 	21: "console",
 	22: "SDXC/extroot",
