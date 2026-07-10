@@ -43,6 +43,9 @@ func readI2C(addr byte, reg byte, length int) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read %d bytes: %w", length, err)
 	}
+	if n != length {
+		return nil, fmt.Errorf("short read: got %d bytes, wanted %d", n, length)
+	}
 	return buf[:n], nil
 }
 
