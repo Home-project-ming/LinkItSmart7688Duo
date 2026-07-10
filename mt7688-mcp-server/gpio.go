@@ -1,25 +1,34 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 const gpioSysfsPath = "/sys/class/gpio"
 
+// exportGPIO exports pin via the sysfs GPIO ABI. It is idempotent even
+// under concurrent invocation: each MCP client session is a separate OS
+// process, so two sessions can race to export the same not-yet-exported
+// pin. A check-then-act (os.Stat then write) would be a TOCTOU race
+// against that. Instead, this always attempts the export write and lets
+// the kernel serialize it: if another process already exported the pin
+// first, the write to .../export returns EBUSY, which we treat as
+// success rather than an error.
 func exportGPIO(pin int) error {
-	path := fmt.Sprintf("%s/gpio%d", gpioSysfsPath, pin)
-	if _, err := os.Stat(path); err == nil {
-		return nil // already exported
-	}
 	f, err := os.OpenFile(gpioSysfsPath+"/export", os.O_WRONLY, 0)
 	if err != nil {
 		return fmt.Errorf("open export: %w", err)
 	}
 	defer f.Close()
 	if _, err := f.WriteString(strconv.Itoa(pin)); err != nil {
+		if errors.Is(err, syscall.EBUSY) {
+			return nil // already exported by a concurrent session
+		}
 		return fmt.Errorf("write export: %w", err)
 	}
 	return nil
