@@ -53,16 +53,16 @@ func gpioSetDirectionHandler(ctx context.Context, req *mcp.CallToolRequest, inpu
 }
 
 type I2CReadInput struct {
-	Addr   int `json:"addr" jsonschema:"7-bit I2C device address"`
-	Reg    int `json:"reg" jsonschema:"register address to read from"`
-	Length int `json:"length" jsonschema:"number of bytes to read"`
+	Addr   byte `json:"addr" jsonschema:"7-bit I2C device address (0-127)"`
+	Reg    byte `json:"reg" jsonschema:"register address to read from"`
+	Length int  `json:"length" jsonschema:"number of bytes to read (1-256)"`
 }
 type I2CReadOutput struct {
 	Data []byte `json:"data" jsonschema:"bytes read from the device"`
 }
 
 func i2cReadHandler(ctx context.Context, req *mcp.CallToolRequest, input I2CReadInput) (*mcp.CallToolResult, I2CReadOutput, error) {
-	data, err := ReadI2C(byte(input.Addr), byte(input.Reg), input.Length)
+	data, err := ReadI2C(input.Addr, input.Reg, input.Length)
 	if err != nil {
 		return nil, I2CReadOutput{}, err
 	}
@@ -70,8 +70,8 @@ func i2cReadHandler(ctx context.Context, req *mcp.CallToolRequest, input I2CRead
 }
 
 type I2CWriteInput struct {
-	Addr int    `json:"addr" jsonschema:"7-bit I2C device address"`
-	Reg  int    `json:"reg" jsonschema:"register address to write to"`
+	Addr byte   `json:"addr" jsonschema:"7-bit I2C device address (0-127)"`
+	Reg  byte   `json:"reg" jsonschema:"register address to write to"`
 	Data []byte `json:"data" jsonschema:"bytes to write"`
 }
 type I2CWriteOutput struct {
@@ -79,7 +79,7 @@ type I2CWriteOutput struct {
 }
 
 func i2cWriteHandler(ctx context.Context, req *mcp.CallToolRequest, input I2CWriteInput) (*mcp.CallToolResult, I2CWriteOutput, error) {
-	if err := WriteI2C(byte(input.Addr), byte(input.Reg), input.Data); err != nil {
+	if err := WriteI2C(input.Addr, input.Reg, input.Data); err != nil {
 		return nil, I2CWriteOutput{}, err
 	}
 	return nil, I2CWriteOutput{OK: true}, nil
@@ -89,9 +89,9 @@ func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "linkit7688-hw", Version: "v0.1.0"}, nil)
 
 	mcp.AddTool(server, &mcp.Tool{Name: "gpio_read", Description: "Read a GPIO pin's current value"}, gpioReadHandler)
-	mcp.AddTool(server, &mcp.Tool{Name: "gpio_write", Description: "Set a GPIO pin's output value"}, gpioWriteHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "gpio_write", Description: "Set a GPIO pin's output value. The pin should be set to \"out\" via gpio_set_direction first."}, gpioWriteHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "gpio_set_direction", Description: "Set a GPIO pin's direction (in/out)"}, gpioSetDirectionHandler)
-	mcp.AddTool(server, &mcp.Tool{Name: "i2c_read", Description: "Read bytes from an I2C device register on /dev/i2c-0"}, i2cReadHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "i2c_read", Description: "Read bytes from an I2C device register on /dev/i2c-0; no repeated start, some devices may return stale data across the register-select/read boundary"}, i2cReadHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "i2c_write", Description: "Write bytes to an I2C device register on /dev/i2c-0"}, i2cWriteHandler)
 
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
