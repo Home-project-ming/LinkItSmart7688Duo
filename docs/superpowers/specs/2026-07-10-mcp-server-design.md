@@ -119,11 +119,14 @@ repeated cold starts.
 
 SSH-spawned stdio, not a persistent network listener. The MCP client's
 `command` is native `ssh` (not `plink` — see below) with the RSA key and
-three legacy-algorithm overrides this board's old Dropbear requires:
+four legacy-algorithm overrides this board's old Dropbear requires:
 
 ```
-ssh -i provisioning/lib/keys/board_rsa -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.50.216 /path/to/mcp-server
+ssh -i provisioning/lib/keys/board_rsa -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa -o MACs=+hmac-sha1 root@192.168.50.216 /path/to/mcp-server
 ```
+
+(This is the live `.mcp.json`/`deploy.ps1` command, all four flags. See
+below for why the 4th, `MACs`, is needed too.)
 
 Each MCP session starts a fresh process on the board over that SSH
 connection and it exits when the session ends.
@@ -159,8 +162,8 @@ existing key auth for this project covers the auth requirement for free.
 | `gpio_read` | `(pin int) -> value` | |
 | `gpio_write` | `(pin int, value bool)` | |
 | `gpio_set_direction` | `(pin int, direction "in"\|"out")` | |
-| `i2c_read` | `(addr int, reg int, len int) -> bytes` | fixed to `/dev/i2c-0` |
-| `i2c_write` | `(addr int, reg int, data []byte)` | fixed to `/dev/i2c-0` |
+| `i2c_read` | `(addr byte, reg byte, length int) -> data []int` | fixed to `/dev/i2c-0`; `addr`/`reg` typed `byte` (not `int`) so out-of-range values are rejected by MCP schema validation instead of silently wrapping — see the `[]byte`-vs-JSON-array note below |
+| `i2c_write` | `(addr byte, reg byte, data []int)` | fixed to `/dev/i2c-0`; `data` is `[]int`, not `[]byte` — Go's `encoding/json` always encodes `[]byte` as a base64 string, which breaks the MCP SDK's auto-generated `"type":"array"` schema (found live 2026-07-10, see "Live verification" above) |
 
 ## Safety: GPIO blocklist
 
@@ -168,12 +171,17 @@ Every `gpio_*` tool checks the pin against a hardcoded blocklist before
 touching hardware, and returns a clear error (not a silent no-op) if the
 pin is blocked:
 
-- `20`, `21` — console
+- `12`, `13` — ATmega bridge UART (`uartlite`, `ttyS0`)
+- `20`, `21` — console (`ttyS2`)
 - `22`–`29` — SDXC / extroot
 - `38` — ATmega ISP reset (held by the core)
 
-This list comes directly from the hardware survey already done on this
-board; it is not being derived fresh here.
+The first three groups (20-29, 38) come from the hardware survey done
+before this implementation. `12`/`13` were added mid-implementation,
+2026-07-10, after a retrospective review flagged the original list didn't
+cover the ATmega bridge UART — confirmed via `dmesg` on the real board
+(`ttyS0` is `10000c00.uartlite`, matching the Developer's Guide's
+"UART Lite: P8, P9 (MT7688AN)" entry), not from a prior written survey.
 
 ## Build & deploy
 
