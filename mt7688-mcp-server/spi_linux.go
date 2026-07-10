@@ -1,6 +1,6 @@
 // Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 
-//go:build linux
+//go:build linux && (mips || mipsle)
 
 package main
 
@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"os"
+	"runtime"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -29,23 +30,25 @@ func transferSPI(device string, mode int, speedHz int, bitsPerWord int, txData [
 	}
 	defer f.Close()
 
-	if err := unix.IoctlSetInt(int(f.Fd()), uint(spiIOCWRMode), mode); err != nil {
-		return nil, fmt.Errorf("set spi mode %d: %w", mode, err)
+	if err := unix.IoctlSetPointerInt(int(f.Fd()), uint(spiIOCWRMode), mode); err != nil {
+		return nil, fmt.Errorf("set spi mode %d on %s: %w", mode, device, err)
 	}
 
 	rxData := make([]byte, len(txData))
 	xfer := make([]byte, spiIOCTransferSize)
-	binary.LittleEndian.PutUint64(xfer[0:8], uint64(uintptr(unsafe.Pointer(&txData[0]))))
-	binary.LittleEndian.PutUint64(xfer[8:16], uint64(uintptr(unsafe.Pointer(&rxData[0]))))
-	binary.LittleEndian.PutUint32(xfer[16:20], uint32(len(txData)))
-	binary.LittleEndian.PutUint32(xfer[20:24], uint32(speedHz))
+	binary.LittleEndian.PutUint64(xfer[0:8], uint64(uintptr(unsafe.Pointer(&txData[0]))))  // tx_buf
+	binary.LittleEndian.PutUint64(xfer[8:16], uint64(uintptr(unsafe.Pointer(&rxData[0])))) // rx_buf
+	binary.LittleEndian.PutUint32(xfer[16:20], uint32(len(txData)))                        // len
+	binary.LittleEndian.PutUint32(xfer[20:24], uint32(speedHz))                            // speed_hz
 	// xfer[24:26] delay_usecs = 0
 	xfer[26] = byte(bitsPerWord)
 	// xfer[27:32] cs_change, tx_nbits, rx_nbits, word_delay_usecs, pad = 0
 
 	_, _, errno := unix.Syscall(unix.SYS_IOCTL, f.Fd(), spiIOCMessage1, uintptr(unsafe.Pointer(&xfer[0])))
+	runtime.KeepAlive(txData)
+	runtime.KeepAlive(rxData)
 	if errno != 0 {
-		return nil, fmt.Errorf("spi transfer: %w", errno)
+		return nil, fmt.Errorf("spi transfer on %s (mode=%d, speed_hz=%d, bits_per_word=%d, len=%d): %w", device, mode, speedHz, bitsPerWord, len(txData), errno)
 	}
 	return rxData, nil
 }
