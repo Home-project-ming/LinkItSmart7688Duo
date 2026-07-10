@@ -86,13 +86,23 @@ ssh -i provisioning/lib/keys/board_rsa -o KexAlgorithms=+diffie-hellman-group14-
 Each MCP session starts a fresh process on the board over that SSH
 connection and it exits when the session ends.
 
-Verified end-to-end 2026-07-10. Two things worth recording so they aren't
+Verified end-to-end 2026-07-10. Things worth recording so they aren't
 rediscovered: this Dropbear rejects ed25519 client keys outright (use the
 RSA key, not the ed25519 one also sitting in `provisioning/lib/keys/`), and
 `plink` cannot load either key directly in any format — it wants a
 puttygen-converted `.ppk`, and puttygen couldn't be driven headlessly here.
 Native `ssh` works with the OpenSSH-format key as-is; use that, not `plink`,
-for this specific connection. Full detail in `provisioning/README.md`.
+for this specific connection.
+
+A 4th override, `-o MACs=+hmac-sha1`, was found necessary during Task 6's
+real hardware deploy — client-dependent: Windows' bundled OpenSSH
+(`OpenSSH_for_Windows_9.5p2`, what a plain `ssh`/`scp` resolves to from
+PowerShell) doesn't enable `hmac-sha1` by default and fails to negotiate
+with this Dropbear without it; Git-Bash/MSYS OpenSSH does enable it by
+default and works without the override. Since which `ssh` binary actually
+runs depends on PATH resolution, include this 4th flag unconditionally —
+it's harmless to pass even when not strictly needed. Full detail in
+`provisioning/README.md`.
 
 Rejected alternative: a resident daemon listening on a TCP port. Would need
 its own auth layer (anyone reaching the port could operate hardware),

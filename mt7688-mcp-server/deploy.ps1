@@ -13,10 +13,11 @@
 # alongside the Kex/HostKey/Pubkey algorithm overrides below.
 param(
     [string] $BoardHost = '192.168.50.216',
-    [string] $KeyFile   = '..\provisioning\lib\keys\board_rsa'
+    [string] $KeyFile   = (Join-Path $PSScriptRoot '..\provisioning\lib\keys\board_rsa')
 )
 
 if (-not (Test-Path .\mcp-server)) { throw "mcp-server not found - run .\build.ps1 first" }
+if (-not (Test-Path $KeyFile)) { throw "key file not found: $KeyFile" }
 
 $sshOpts = @(
     '-i', $KeyFile,

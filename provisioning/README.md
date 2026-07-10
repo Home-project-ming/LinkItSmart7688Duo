@@ -31,10 +31,10 @@ invocations; repeated attempts produced no output and no file). Use the **native
 client (already present on this machine at `/usr/bin/ssh`) instead, for key-based auth:
 
 ```powershell
-ssh -i .\provisioning\lib\keys\board_rsa -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa root@192.168.50.216 '<command>'
+ssh -i .\provisioning\lib\keys\board_rsa -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa -o MACs=+hmac-sha1 root@192.168.50.216 '<command>'
 ```
 
-All three legacy-algorithm overrides are required, each for a different negotiation phase
+All four legacy-algorithm overrides are required, each for a different negotiation phase
 this 2016-era Dropbear needs but modern OpenSSH no longer offers by default:
 
 | Flag | Why |
@@ -42,6 +42,7 @@ this 2016-era Dropbear needs but modern OpenSSH no longer offers by default:
 | `KexAlgorithms=+diffie-hellman-group14-sha1` | Dropbear's key exchange offer is SHA-1 only |
 | `HostKeyAlgorithms=+ssh-rsa` | Dropbear's host key type is legacy `ssh-rsa`, not `rsa-sha2-*` |
 | `PubkeyAcceptedAlgorithms=+ssh-rsa` | Dropbear only understands the legacy `ssh-rsa` client-key signature scheme, not `rsa-sha2-*` — without this, auth silently fails with "unknown algo" in the board's own logs, not a client-side error |
+| `MACs=+hmac-sha1` | Dropbear only offers `hmac-sha1`/`hmac-md5` for the MAC, and neither is in modern OpenSSH's default-enabled MAC list — fails with `Unable to negotiate ... no matching MAC found`. **Client-dependent**: Windows' bundled `C:\Windows\System32\OpenSSH\ssh.exe` needs this explicitly; Git-Bash/MSYS's OpenSSH build enables `hmac-sha1` by default and doesn't strictly need it. Harmless to include regardless of which `ssh` resolves first, so always pass it. |
 
 To (re)install the RSA public key on a fresh board (one-time, uses the still-working
 password):

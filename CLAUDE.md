@@ -27,7 +27,7 @@ The LinkIt Smart 7688 **Duo** carries **two independent processors** that talk t
 Access is over SSH; the board default is user `root` at `mylinkit.local` (or `192.168.100.1` when the board is its own AP). TODO: record this project's actual host/credentials/network setup.
 
 - **On-device package management:** `opkg update` / `opkg install <pkg>`. Runtimes commonly available: Python, Node.js, plus busybox userland. TODO: pin which runtimes/versions this project targets.
-- **Deploy to board:** typically `scp`/`rsync` over SSH, or an on-device git checkout. TODO: record the real deploy command once chosen.
+- **Deploy to board:** see "Run / test / lint" below for the MCP server's real `.\deploy.ps1` command; other code under this side should follow the same `scp`/SSH pattern until/unless it needs something different.
 - **Cross-compiling C for MIPS** (only if native/opkg is insufficient): use the LinkIt 7688 / OpenWrt SDK toolchain (`mipsel-openwrt-linux-*`). TODO: document the toolchain path and build invocation if this project ships compiled binaries.
 - **Run / test / lint (MCP server, `mt7688-mcp-server/`):**
   - Test: `go test ./...` (single test: `go test ./... -run TestName -v`)

@@ -845,6 +845,7 @@ against the real board.
         "-o", "KexAlgorithms=+diffie-hellman-group14-sha1",
         "-o", "HostKeyAlgorithms=+ssh-rsa",
         "-o", "PubkeyAcceptedAlgorithms=+ssh-rsa",
+        "-o", "MACs=+hmac-sha1",
         "root@192.168.50.216",
         "/usr/local/bin/mcp-server"
       ]
@@ -852,6 +853,13 @@ against the real board.
   }
 }
 ```
+
+(Updated during Task 6: a 4th flag, `MACs=+hmac-sha1`, turned out to be
+necessary too — specifically for Windows' bundled OpenSSH client, which
+doesn't enable `hmac-sha1` by default the way Git-Bash/MSYS's build does.
+Harmless to include regardless of which `ssh` ends up on PATH, so it's
+included unconditionally here. See `provisioning/README.md`'s SSH key
+section for the full 4-flag rationale table.)
 
 - [ ] **Step 2: Reload MCP connections and confirm the tools appear**
 
