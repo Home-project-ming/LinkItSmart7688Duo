@@ -95,3 +95,22 @@ var (
 	spiIOCWRMode   = mipsIOC(mipsIOCWrite, spiIOCMagic, 1, 1)                  // SPI_IOC_WR_MODE
 	spiIOCMessage1 = mipsIOC(mipsIOCWrite, spiIOCMagic, 0, spiIOCTransferSize) // SPI_IOC_MESSAGE(1)
 )
+
+// TransferSPI validates input, discovers the sole SPI device node, and
+// performs a full-duplex transfer. Real ioctl work is in spi_linux.go
+// (spi_other.go stubs it out on non-linux dev machines), mirroring the
+// i2c.go / i2c_linux.go / i2c_other.go split.
+func TransferSPI(mode int, speedHz int, bitsPerWord int, txData []byte) (rxData []byte, device string, err error) {
+	if err := validateSPITransfer(mode, speedHz, bitsPerWord, txData); err != nil {
+		return nil, "", err
+	}
+	device, err = discoverSPIDevice()
+	if err != nil {
+		return nil, "", err
+	}
+	rxData, err = transferSPI(device, mode, speedHz, bitsPerWord, txData)
+	if err != nil {
+		return nil, "", err
+	}
+	return rxData, device, nil
+}
