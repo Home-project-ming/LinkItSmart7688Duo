@@ -5,8 +5,15 @@ package main
 import "fmt"
 
 var blockedPins = map[int]string{
+	6:  "SPI CS1 (spi_cs1 pinmux group)",
+	7:  "SPI bus (fixed-function pin, no GPIO alternative)",
+	8:  "SPI bus (fixed-function pin, no GPIO alternative)",
+	9:  "SPI bus (fixed-function pin, no GPIO alternative)",
+	10: "SPI bus (fixed-function pin, no GPIO alternative)",
 	12: "ATmega bridge UART (uartlite, ttyS0)",
 	13: "ATmega bridge UART (uartlite, ttyS0)",
+	18: "PWM channel 0 (pwm0 pinmux group)",
+	19: "PWM channel 1 (pwm1 pinmux group)",
 	20: "console",
 	21: "console",
 	22: "SDXC/extroot",
