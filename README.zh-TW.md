@@ -50,7 +50,7 @@ MCP client(例如 Claude Code)是透過每個 session 各自用 SSH 啟動一次
 
 ## 現況
 
-還在持續進行中。MCP server 目前開放 10 個工具:GPIO(讀/寫/方向)、I2C(讀/寫)、SPI(`spi_transfer`)、PWM(`pwm_configure`/`pwm_set_enabled`/`pwm_read`)、UART(`uart_transact`)。除了 `i2c_write`(只有程式碼審查跟單元測試,手邊沒有能安全拿來測試寫入的 I2C 裝置)、`uart_transact` 的位元組級別正確性(沒有真實序列裝置或 loopback 可測——已確認呼叫本身在實機上不會出錯、真的能從硬體讀到位元組,但還沒驗證過完整的收發正確性)之外,都已經在真實硬體上做過結構性驗證。I2S、ATmega UART 橋接、ADC 還沒做成工具開放出來——ADC 尤其是 MT7688 這側完全沒有硬體路徑(實測確認沒有任何 IIO/ADC 子系統),要等 ATmega 橋接先做完。完整全貌表格見 [`docs/superpowers/specs/2026-07-11-uart-design.md`](docs/superpowers/specs/2026-07-11-uart-design.md)。
+還在持續進行中。MCP server 目前開放 11 個工具:GPIO(讀/寫/方向)、I2C(讀/寫)、SPI(`spi_transfer`)、PWM(`pwm_configure`/`pwm_set_enabled`/`pwm_read`)、UART(`uart_transact`)、I2S(`i2s_play`)。除了 `i2c_write`(只有程式碼審查跟單元測試,手邊沒有能安全拿來測試寫入的 I2C 裝置)、`uart_transact` 的位元組級別正確性(沒有真實序列裝置或 loopback 可測)、`i2s_play` 的實際聽感(驗證當時沒接喇叭,只確認呼叫本身不會出錯,沒辦法確認聲音品質)之外,都已經在真實硬體上做過結構性驗證。I2S 的錄音**確認不可用**,不只是還沒做——板子的錄音路徑有可重現的驅動層 bug 會讓音效裝置卡死(連 `SIGKILL` 都殺不掉,要重開機才能解),設計階段就查到並記錄下來了,詳見 [`docs/superpowers/specs/2026-07-11-i2s-design.md`](docs/superpowers/specs/2026-07-11-i2s-design.md) 的 Investigation 段落。ATmega UART 橋接、ADC 還沒做成工具開放出來——ADC 尤其是 MT7688 這側完全沒有硬體路徑(實測確認沒有任何 IIO/ADC 子系統),要等 ATmega 橋接先做完。完整全貌表格見 [`docs/superpowers/specs/2026-07-11-spi-pwm-design.md`](docs/superpowers/specs/2026-07-11-spi-pwm-design.md)。
 
 ## 版權
 

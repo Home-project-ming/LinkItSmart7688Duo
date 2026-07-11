@@ -62,18 +62,24 @@ that a normal modern OpenSSH client doesn't offer by default.
 
 ## Status
 
-Actively evolving. The MCP server exposes 10 tools: GPIO (read/write/
+Actively evolving. The MCP server exposes 11 tools: GPIO (read/write/
 direction), I2C (read/write), SPI (`spi_transfer`), PWM (`pwm_configure`/
-`pwm_set_enabled`/`pwm_read`), and UART (`uart_transact`). Structurally
-verified live against real hardware except `i2c_write` (code review + unit
-test only, no I2C device safely available to test a write against) and
-`uart_transact`'s byte-level round-trip correctness (no real serial device
-or loopback available — the call succeeding and reading real bytes from an
-unconnected line was confirmed, full correctness against a peer device
-wasn't). I2S, the ATmega UART bridge, and ADC are not yet exposed as tools
-— ADC specifically has no MT7688-side hardware path at all (confirmed live:
-no IIO/ADC subsystem exists on this chip) and depends on the ATmega bridge
-work landing first. See `docs/superpowers/specs/2026-07-11-uart-design.md`'s
+`pwm_set_enabled`/`pwm_read`), UART (`uart_transact`), and I2S
+(`i2s_play`). Structurally verified live against real hardware except
+`i2c_write` (code review + unit test only, no I2C device safely available
+to test a write against), `uart_transact`'s byte-level round-trip
+correctness (no real serial device or loopback available), and
+`i2s_play`'s audible output (no speaker was connected during verification
+— the call completing without error was confirmed, whether it actually
+produced clean audio wasn't). I2S recording is confirmed **unavailable**,
+not just unimplemented: the board's capture path has a reproducible
+driver-level bug that hangs the audio device (`SIGKILL`-resistant,
+requires a reboot), found and documented during design — see
+`docs/superpowers/specs/2026-07-11-i2s-design.md`'s "Investigation"
+section. The ATmega UART bridge and ADC are not yet exposed as tools — ADC
+specifically has no MT7688-side hardware path at all (confirmed live: no
+IIO/ADC subsystem exists on this chip) and depends on the ATmega bridge
+work landing first. See `docs/superpowers/specs/2026-07-11-spi-pwm-design.md`'s
 roadmap table for the full picture and why each is scoped separately.
 
 ## Copyright
