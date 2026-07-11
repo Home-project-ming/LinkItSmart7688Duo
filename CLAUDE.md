@@ -12,11 +12,12 @@ The LinkIt Smart 7688 **Duo** carries **two independent processors** that talk t
 
 | | MT7688 side | ATmega32U4 side |
 |---|---|---|
-| Chip | MediaTek MT7688AN (MIPS24KEc @ 580 MHz) | Microchip ATmega32U4 (AVR @ 16 MHz) |
+| Chip | MediaTek MT7688AN (MIPS24KEc @ 580 MHz) | Microchip ATmega32U4 (AVR @ **8 MHz**, 3.3V — not the common 16MHz/5V Leonardo default; confirmed via this board's `boards.txt` `build.f_cpu=8000000L`, verified 2026-07-11) |
 | Runs | OpenWrt-based Linux ("LinkIt Smart 7688" firmware) | Bare-metal / Arduino firmware (Leonardo/Yún-class) |
 | Role | Networking, WiFi, USB host, SD, compute, services | Real-time GPIO, ADC, sensors, PWM, timing |
-| Code lives in | `mt7688-mcp-server/` (MCP server) | (TODO: e.g. `firmware/`, `sketch/`) |
+| Code lives in | `mt7688-mcp-server/` (MCP server) | `atmega-firmware/` |
 | Language | Python / Node.js / shell / C | Arduino C++ (`.ino` / C++) |
+| Power | Shares the board's main power input | **Separate USB port** silkscreened "USB Power & MCU USB Port" (Micro-B, 5V IN) — the ATmega does not draw power from the MT7688 side or from the "USB Host" port. If ISP programming reports "AVR device not responding", check this port is connected before anything else. |
 
 **The bridge is the point of the "Duo".** The two chips are wired together by a UART. Anything the Arduino side senses or actuates reaches the network/services only by passing bytes across this link, and vice versa. When designing or debugging, always ask *which side owns this* and *what crosses the bridge*.
 
@@ -38,13 +39,29 @@ Access is over SSH; the board default is user `root` at `mylinkit.local` (or `19
 
 ## Working on the ATmega32U4 (Arduino) side
 
-This side is a standard Arduino target. The board package is **"LinkIt Smart 7688 Duo"**; install it via the Arduino Boards Manager (it pulls the MediaTek/Seeed board definition). Sketches can be uploaded **over the network through the MT7688 bridge** (Yún-style) or over USB.
+This side is a standard Arduino target. The board package is **"LinkIt Smart 7688 Duo"**, FQBN **`LinkIt:avr:smart7688`** (confirmed live 2026-07-11).
 
-- **Build/upload (recommended, scriptable):** `arduino-cli`:
-  - Compile: `arduino-cli compile --fqbn <fqbn> <sketch-dir>` — TODO: record the exact FQBN for this board once confirmed via `arduino-cli board listall | grep -i 7688`.
-  - Upload over USB: `arduino-cli upload -p <port> --fqbn <fqbn> <sketch-dir>`.
-  - Network upload (via MT7688): TODO — document the OTA/bridge upload command and target host.
-- **GUI alternative:** Arduino IDE with the same board selected. TODO: note if this project standardizes on IDE vs. CLI.
+**The board manager URL documented by the vendor (Seeed's wiki:
+`http://download.labs.mediatek.com/package_mtk_linkit_smart_7688_index.json`)
+is dead** — `labs.mediatek.com` no longer resolves in DNS at all (MediaTek
+Labs' developer portal has been shut down). `arduino-cli`'s normal
+"add board index → core install" flow does not work for this board anymore.
+**Manual install workaround** (verified working 2026-07-11):
+1. Install `arduino:avr` normally (`arduino-cli core install arduino:avr`) — this board's `platform.txt` depends on it for the base AVR core.
+2. Clone `github.com/MediaTek-Labs/linkit-smart-7688-duo-arduino` at tag `0.1.7` (the latest real git tag; `0.1.8` was only ever published to the now-dead server).
+3. Copy `mtk/avr/*` into `<arduino-cli data dir>/packages/LinkIt/hardware/avr/0.1.7/` (find the data dir via `arduino-cli config dump`).
+4. `arduino-cli board listall | grep -i 7688` should then show `LinkIt Smart 7688 Duo    LinkIt:avr:smart7688`.
+
+**This board's `pins_arduino.h` does not define `LED_BUILTIN`.** It does define `TXLED0`/`TXLED1`/`RXLED0`/`RXLED1` (standard Leonardo-family USB-activity-LED macros) but this specific board does not appear to populate that LED (compiled and flashed successfully, produced no visible blink). The board **does** have a real, populated LED — silkscreened "LED (D13)" on the board, near the MCU reset button — wired to plain Arduino pin **13** (use `pinMode(13, ...)`/`digitalWrite(13, ...)`, not a `LED_BUILTIN` alias). Confirmed both from the vendor's own `MediaTek LinkIt™ Smart 7688 Developer's Guide.pdf` (Figure 7 board photo, Figure 10 pin-out diagram — both in this repo root) and live hardware testing.
+
+**Network/OTA upload is NOT the Yún serial-bootloader style this section previously assumed.** The board ships a complete **ISP-over-GPIO** flashing mechanism instead — no bootloader, no serial protocol, doesn't touch the bridge UART (`Serial1`/pins 12-13) at all:
+- `/usr/bin/run-avrdude <hexfile> [extra-avrdude-args]` is pre-installed on the board. It temporarily repurposes GPIO pins 14-17 (the `spi_s` pinmux group) to plain GPIO and bit-bangs the standard 6-pin AVR ISP protocol via `avrdude -c linuxgpio`.
+- Exact pin mapping (from the board's live `/etc/avrdude.conf`, cross-confirmed by the Developer's Guide's pin-out diagram showing MT7688 GPIO14-17 wired directly to the ATmega's hardware SPI pins D14-D17/SCLK/MOSI/MISO/SS): `reset=GPIO3, sck=GPIO15, mosi=GPIO16, miso=GPIO17`.
+- **GPIO pin 3 is the ISP reset line** — this is also the pin this project's GPIO blocklist previously assumed was pin 38 based on indirect inference; that assumption looks wrong (see `docs/superpowers/specs/2026-07-11-atmega-phase-a-toolchain.md`'s "Live findings" for the full story) but hasn't been fixed in `mt7688-mcp-server/blocklist.go` yet — treat pin 3 as sensitive to the ATmega's reset state even though it's not currently blocklisted.
+- Workflow: `arduino-cli compile --fqbn LinkIt:avr:smart7688 --output-dir <dir> <sketch-dir>` locally, then `scp` the resulting `.hex` to the board and immediately run `run-avrdude` — **don't let time pass between the two**, `/tmp` on this board is `tmpfs` and something on this board clears it periodically, so a `.hex` copied and not used within a few minutes may already be gone (`run-avrdude` will just report "No such file or directory").
+- Upload over USB is also possible (`arduino-cli upload -p <port> --fqbn <fqbn> <sketch-dir>`) but wasn't used or verified in this project — TODO if wired upload is ever needed.
+- **The ATmega side has its own separate power/USB port** (see board architecture table above) — if `avrdude` reports "AVR device not responding, initialization failed", check that port is connected before debugging anything else; ISP communication is impossible if the target chip has no power.
+- **GUI alternative:** Arduino IDE with the same board selected — not set up or used in this project so far, `arduino-cli` is what's actually verified working.
 - **Serial debug:** the ATmega's USB `Serial` is the console; `Serial1` is reserved for the bridge — don't print debug output to `Serial1` or it corrupts bridge traffic.
 
 ## Conventions for future work here

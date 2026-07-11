@@ -2,8 +2,65 @@
 
 # ATmega bridge Phase A: toolchain bring-up — design
 
-Status: approved, not yet implemented
+Status: implemented, verified live on real hardware 2026-07-11
 Date: 2026-07-11
+
+## Live verification (2026-07-11)
+
+Full path executed for real, end to end:
+
+- `arduino-cli` installed, FQBN confirmed as `LinkIt:avr:smart7688` — but
+  the vendor's documented board-manager URL turned out to be dead
+  (`labs.mediatek.com` no longer resolves), requiring a manual
+  install-from-GitHub-source workaround. Independently re-verified
+  byte-for-byte against the real upstream repo before trusting it. Full
+  details now in `CLAUDE.md`.
+- **First compile attempt failed**: the original sketch (this spec's own
+  "Approach" section) used `LED_BUILTIN`, which this board's vendor-supplied
+  `pins_arduino.h` does not define. Substituted `TXLED0`/`TXLED1` (defined,
+  standard Leonardo-family macros) — this compiled and flashed
+  successfully, but **produced no visible blink**.
+- **First flash attempt failed differently**: `avrdude: AVR device not
+  responding`. Root cause: the ATmega has its **own separate USB power
+  port** (silkscreened "USB Power & MCU USB Port"), distinct from both the
+  MT7688 side's power and the board's other "USB Host" port — nothing was
+  connected to it, so the target chip had no power at all. Not discoverable
+  from any documentation consulted before this point; found by asking the
+  user to check. Connecting it fixed the "not responding" error
+  immediately (`avrdude` then read the real device signature, `0x1e9587`,
+  confirming genuine ATmega32U4 communication).
+- **A second, unrelated snag**: after fixing power, `avrdude` erased the
+  chip but then failed to find `/tmp/blink-test.hex` on the board — `/tmp`
+  is `tmpfs` and something on this board's stock firmware appears to clear
+  it periodically; enough real time had passed during the power
+  troubleshooting that the earlier-`scp`'d file was gone. Fixed by
+  re-copying immediately before flashing, with no delay in between.
+- **The `TXLED0`/`TXLED1` sketch still didn't blink anything visible**
+  even with power confirmed and flash verified byte-for-byte
+  (`avrdude: 3994 bytes of flash verified`) — meaning the firmware was
+  genuinely running correctly, the LED choice was just wrong. The user
+  provided the vendor's own `MediaTek LinkIt™ Smart 7688 Developer's
+  Guide.pdf` (already in this repo root) — Figure 7 (board photo) and
+  Figure 10 (pin-out diagram) confirm a real, populated "LED (D13)" wired
+  to plain Arduino pin 13, distinct from the TX-activity LED this board
+  doesn't populate. Rewrote the sketch to use `pinMode(13, ...)`/
+  `digitalWrite(13, ...)` directly. Recompiled, reflashed
+  (`avrdude: 4480 bytes of flash verified`) — **LED confirmed blinking by
+  the user.**
+- This also cross-confirmed, via an authoritative vendor source (not just
+  the live `/etc/avrdude.conf` reading from earlier in this design), that
+  MT7688 GPIO pins 15/16/17 are physically the ATmega's own hardware
+  SCLK/MOSI/MISO pins, and GPIO 3 is the ISP reset line — matching what was
+  found from `avrdude.conf` alone, now independently corroborated by the
+  Developer's Guide's own pin-out diagram.
+
+**Net result: Phase A's goal — prove the whole toolchain works end to
+end, with a human confirming a real, physical LED blinks on real
+hardware — is met.** Three real, non-obvious problems were found and
+fixed along the way (dead board-manager URL, missing `LED_BUILTIN` +
+wrong-LED-choice, ATmega-specific power requirement + tmpfs cleanup
+timing), all now documented in `CLAUDE.md` so Phase B/C onward don't
+rediscover them.
 
 ## Context
 
