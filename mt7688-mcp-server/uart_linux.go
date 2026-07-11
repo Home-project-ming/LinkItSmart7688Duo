@@ -32,13 +32,27 @@ func uartTransact(baudRate int, txData []byte, readTimeoutMs int, maxReadBytes i
 		return nil, fmt.Errorf("get termios on %s: %w", uartDevPath, err)
 	}
 
-	t.Cflag &^= unix.CBAUD | unix.CSIZE | unix.PARENB | unix.CSTOPB
+	// Clear baud rate, char size, parity, stop-bit, and hardware
+	// flow-control bits before setting them explicitly below. CRTSCTS
+	// (RTS/CTS hardware flow control) must be cleared unconditionally,
+	// not just left at whatever the tty's prior state happened to be:
+	// uart1 (pins 45/46) is a 2-wire TX/RX UART with no RTS/CTS routed,
+	// so if CRTSCTS were ever set, unix.Write would block forever
+	// waiting for a CTS line that can never assert - unlike reads,
+	// writes aren't bounded by VTIME, so this would hang with no
+	// timeout and no error.
+	t.Cflag &^= unix.CBAUD | unix.CSIZE | unix.PARENB | unix.CSTOPB | unix.CRTSCTS
+	// CS8 = 8 data bits, CREAD = enable receiver, CLOCAL = ignore modem
+	// control lines (no carrier-detect wait), BOTHER = use Ispeed/Ospeed
+	// below for an arbitrary baud rate instead of a fixed B* constant.
+	// BOTHER (0x1000) is a bit pattern that lives inside CBAUD's mask
+	// (0x100f), which isn't obvious from the hex values alone.
 	t.Cflag |= unix.CS8 | unix.CREAD | unix.CLOCAL | unix.BOTHER
 	t.Ispeed = uint32(baudRate)
 	t.Ospeed = uint32(baudRate)
-	t.Iflag = 0
-	t.Oflag = 0
-	t.Lflag = 0
+	t.Iflag = 0 // no input processing (no software flow control, no CR/NL translation, etc.)
+	t.Oflag = 0 // no output processing
+	t.Lflag = 0 // raw/non-canonical mode - without this, VMIN/VTIME below are ignored entirely
 	t.Cc[unix.VMIN] = 0
 	t.Cc[unix.VTIME] = uint8(readTimeoutMs / 100)
 
@@ -47,6 +61,10 @@ func uartTransact(baudRate int, txData []byte, readTimeoutMs int, maxReadBytes i
 	}
 
 	if len(txData) > 0 {
+		// A short write without an error is POSIX-legal in principle,
+		// but judged low-risk here and not worth defensive code: at
+		// most 256 bytes (validateUARTTransact's cap) to a tty fd in
+		// blocking mode.
 		if _, err := unix.Write(fd, txData); err != nil {
 			return nil, fmt.Errorf("write %d bytes to %s: %w", len(txData), uartDevPath, err)
 		}
