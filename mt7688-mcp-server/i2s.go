@@ -61,6 +61,7 @@ func PlayI2S(wavBase64 string) error {
 
 	cmd := exec.CommandContext(ctx, "aplay", "-D", i2sDevice, "-q")
 	cmd.Stdin = bytes.NewReader(data)
+	cmd.WaitDelay = i2sPlaybackTimeout + 5*time.Second
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
@@ -68,7 +69,10 @@ func PlayI2S(wavBase64 string) error {
 		if ctx.Err() == context.DeadlineExceeded {
 			return fmt.Errorf("aplay timed out after %s - if this recurs, the board may need a reboot (see design doc's capture-hang findings for the same failure class on the record path): %w", i2sPlaybackTimeout, err)
 		}
-		return fmt.Errorf("aplay failed: %w (stderr: %s)", err, stderr.String())
+		if stderr.Len() > 0 {
+			return fmt.Errorf("aplay failed: %w (stderr: %s)", err, stderr.String())
+		}
+		return fmt.Errorf("aplay failed: %w", err)
 	}
 	return nil
 }
