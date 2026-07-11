@@ -50,7 +50,7 @@ MCP client(例如 Claude Code)是透過每個 session 各自用 SSH 啟動一次
 
 ## 現況
 
-還在持續進行中。MCP server 目前開放 9 個工具:GPIO(讀/寫/方向)、I2C(讀/寫)、SPI(`spi_transfer`)、PWM(`pwm_configure`/`pwm_set_enabled`/`pwm_read`)——除了 `i2c_write` 之外都已經在真實硬體上驗證過;`i2c_write` 目前只有程式碼審查跟單元測試(手邊沒有能安全拿來測試寫入的 I2C 裝置)。ATmega UART 橋接、I2S 已經調查過(見 `dev-notes.html`),但還沒做成工具開放出來——為什麼這兩個要分開處理,見 [`docs/superpowers/specs/2026-07-11-spi-pwm-design.md`](docs/superpowers/specs/2026-07-11-spi-pwm-design.md) 裡的全貌表格。
+還在持續進行中。MCP server 目前開放 10 個工具:GPIO(讀/寫/方向)、I2C(讀/寫)、SPI(`spi_transfer`)、PWM(`pwm_configure`/`pwm_set_enabled`/`pwm_read`)、UART(`uart_transact`)。除了 `i2c_write`(只有程式碼審查跟單元測試,手邊沒有能安全拿來測試寫入的 I2C 裝置)、`uart_transact` 的位元組級別正確性(沒有真實序列裝置或 loopback 可測——已確認呼叫本身在實機上不會出錯、真的能從硬體讀到位元組,但還沒驗證過完整的收發正確性)之外,都已經在真實硬體上做過結構性驗證。I2S、ATmega UART 橋接、ADC 還沒做成工具開放出來——ADC 尤其是 MT7688 這側完全沒有硬體路徑(實測確認沒有任何 IIO/ADC 子系統),要等 ATmega 橋接先做完。完整全貌表格見 [`docs/superpowers/specs/2026-07-11-uart-design.md`](docs/superpowers/specs/2026-07-11-uart-design.md)。
 
 ## 版權
 

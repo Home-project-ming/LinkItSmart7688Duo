@@ -2,8 +2,51 @@
 
 # MCP server: UART tool — design
 
-Status: approved, not yet implemented
+Status: implemented, partially verified live on real hardware 2026-07-11
 Date: 2026-07-11
+
+## Live verification (2026-07-11)
+
+`uart_transact` deployed to the board and exercised through a real MCP
+client session:
+
+- `x/sys/unix` API research (Task 3's mandatory pre-implementation step,
+  see plan): the hypothesis code needed **zero adjustment** — `Termios`
+  struct fields, `TCGETS2`/`TCSETS2`, `BOTHER`, `CBAUD`, `CS8`, `CREAD`,
+  `CLOCAL`, `PARENB`, `CSTOPB`, `VMIN`, `VTIME` all matched exactly what's
+  actually in `golang.org/x/sys@v0.47.0/unix` for `linux/mipsle`. Recorded
+  here per this doc's own "Open questions" ask, so it doesn't need
+  re-deriving next time: `Cc` is `[23]uint8` on this arch (not `[32]uint8`
+  like some others), and `IoctlGetTermios`/`IoctlSetTermios` take `req
+  uint` on Linux.
+- **One real bug found and fixed during code review, before live
+  verification:** `unix.CRTSCTS` (hardware flow control) was never cleared
+  from `Cflag`, so "no flow control" wasn't actually guaranteed — it
+  depended on whatever state the tty happened to be in. Since `uart1`'s
+  pins 45/46 are a 2-wire TX/RX UART with no CTS line ever wired, a stray
+  `CRTSCTS` bit would have made `unix.Write` block forever with no
+  timeout (writes aren't `VTIME`-bounded the way reads are). Fixed by
+  adding `unix.CRTSCTS` to the `Cflag` clear mask.
+- GPIO blocklist extension confirmed live: `gpio_write` on pin 45 correctly
+  rejected with `"gpio 45 is blocked: UART1 (uart1 pinmux group)"`.
+- `uart_transact(baud_rate: 9600, tx_data: [], read_timeout_ms: 100,
+  max_read_bytes: 256)` — a pure listen call, no device wired to pins
+  45/46 — succeeded with no error and returned `rx_data: [0]`: one byte,
+  value `0x00`. This is a stronger verification signal than an empty
+  result would have been: a floating RX line commonly latches a spurious
+  byte on a glitch/transition interpreted as a start bit, so getting real
+  (if meaningless) data back proves the whole path actually executed on
+  hardware — open, termios configuration (including the `BOTHER`/`Ispeed`/
+  `Ospeed` arbitrary-baud-rate mechanism and the `VMIN=0`/`VTIME`-based
+  timeout), and a real `read()` from the physical UART — not just that the
+  call returned without erroring.
+- **Not verified**: byte-level round-trip correctness (send known bytes,
+  confirm they're received correctly) — no real device or loopback jumper
+  was available to test against. Same posture as `i2c_write` in the
+  original MCP server phase: code-reviewed and structurally verified live,
+  but full correctness against a real peer device remains unverified.
+  First real `uart_transact` usage against an actual attached device is
+  the remaining verification step, whenever that's next relevant.
 
 ## Context
 
