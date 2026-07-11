@@ -62,11 +62,14 @@ that a normal modern OpenSSH client doesn't offer by default.
 
 ## Status
 
-Actively evolving. The MCP server's GPIO and I2C read paths are verified
-live against real hardware; `i2c_write` is verified by code review and
-unit test only (no I2C device was safely available to test a real write
-against). SPI, PWM, the ATmega UART bridge, and I2S are surveyed
-(`dev-notes.html`) but not yet exposed as tools.
+Actively evolving. The MCP server exposes 9 tools: GPIO (read/write/
+direction), I2C (read/write), SPI (`spi_transfer`), and PWM (`pwm_configure`/
+`pwm_set_enabled`/`pwm_read`) — all verified live against real hardware
+except `i2c_write`, which is verified by code review and unit test only (no
+I2C device was safely available to test a real write against). The ATmega
+UART bridge and I2S are surveyed (`dev-notes.html`) but not yet exposed as
+tools — see `docs/superpowers/specs/2026-07-11-spi-pwm-design.md`'s roadmap
+table for why those two are scoped separately.
 
 ## Copyright
 

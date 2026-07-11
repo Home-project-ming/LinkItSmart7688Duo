@@ -2,8 +2,61 @@
 
 # MCP server: SPI + PWM tools — design
 
-Status: approved, not yet implemented
+Status: implemented, verified live on real hardware 2026-07-11
 Date: 2026-07-11
+
+## Live verification (2026-07-11)
+
+All four tools deployed to the board and exercised through a real MCP client
+session (not just `go test`):
+
+- `spi_transfer`, `pwm_configure`, `pwm_set_enabled`, `pwm_read` all visible
+  and callable after redeploy + MCP session reload.
+- GPIO blocklist extension confirmed live: `gpio_write` on pin 18 correctly
+  rejected with `"gpio 18 is blocked: PWM channel 0 (pwm0 pinmux group)"`.
+- PWM round-trip confirmed on channel 0 (GPIO18): `pwm_configure(period_ns:
+  1000000, duty_ns: 500000)` → `pwm_read` matched exactly. Both branches of
+  the write-order logic (`pwmWritePeriodFirst`, added during Task 4's code
+  review) were exercised live: a second `pwm_configure(period_ns: 200000,
+  duty_ns: 100000)` — period *decreasing* below the previous duty_cycle
+  value — succeeded and read back correctly, exercising the "duty_cycle
+  before period" branch that the first call's period-increase never
+  touches. `pwm_set_enabled(true)` then `pwm_read` confirmed `enabled:
+  true`; `pwm_set_enabled(false)` left the channel stopped. Channel 2
+  correctly rejected by all three PWM tools with "not verified routed to a
+  known pin".
+- `spi_transfer(mode: 0, speed_hz: 1000000, bits_per_word: 8, tx_data:
+  [0,0,0,0])` succeeded with no ioctl error, `device` correctly reported as
+  `/dev/spidev32766.1` (auto-discovered, not hardcoded). This is the
+  highest-risk part of this whole feature (see "Known risk" below) and it
+  passed cleanly on the first live attempt — *after* a code-quality review
+  caught and fixed two real bugs before this point (see next paragraph). A
+  physical MOSI-MISO loopback to verify `rx_data` byte-correctness was
+  offered but declined (no device attached to verify against; the ioctl
+  succeeding at all is the strongest signal reachable without one).
+
+**Two real bugs found and fixed during implementation, before live
+verification (i.e. subagent code review caught these, not hardware
+testing):**
+
+1. `SPI_IOC_WR_MODE` was originally called via `unix.IoctlSetInt(fd, req,
+   mode)`, which passes `mode` (0-3) directly as the ioctl argument. The
+   kernel's spidev driver dereferences that argument as a *pointer*
+   (`get_user(tmp, (u8 __user *)arg)`) — passing the raw value would have
+   made every `spi_transfer` call fault with `EFAULT` before ever reaching
+   the transfer step. Fixed by switching to `unix.IoctlSetPointerInt`,
+   which passes the address of the value as spidev expects.
+2. Missing `runtime.KeepAlive(txData)`: the transfer ioctl embeds
+   `&txData[0]` as an opaque address inside a hand-built byte buffer, which
+   the garbage collector doesn't track as a live reference; `txData`'s only
+   other use after that point doesn't require its backing array, so
+   nothing else kept it alive across the syscall window. Fixed by adding
+   explicit `runtime.KeepAlive` calls for both buffers after the syscall.
+
+Both were caught by two-stage subagent code review (spec compliance, then
+code quality) before any hardware was touched — live verification then
+confirmed the fixes actually work, rather than being the first place either
+bug was found.
 
 ## Context
 

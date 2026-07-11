@@ -50,7 +50,7 @@ MCP client(例如 Claude Code)是透過每個 session 各自用 SSH 啟動一次
 
 ## 現況
 
-還在持續進行中。MCP server 的 GPIO 讀寫、I2C 讀取都已經在真實硬體上驗證過;`i2c_write` 目前只有程式碼審查跟單元測試,沒有實機驗證過(手邊沒有能安全拿來測試寫入的 I2C 裝置)。SPI、PWM、ATmega UART 橋接、I2S 都已經調查過(見 `dev-notes.html`),但還沒做成工具開放出來。
+還在持續進行中。MCP server 目前開放 9 個工具:GPIO(讀/寫/方向)、I2C(讀/寫)、SPI(`spi_transfer`)、PWM(`pwm_configure`/`pwm_set_enabled`/`pwm_read`)——除了 `i2c_write` 之外都已經在真實硬體上驗證過;`i2c_write` 目前只有程式碼審查跟單元測試(手邊沒有能安全拿來測試寫入的 I2C 裝置)。ATmega UART 橋接、I2S 已經調查過(見 `dev-notes.html`),但還沒做成工具開放出來——為什麼這兩個要分開處理,見 [`docs/superpowers/specs/2026-07-11-spi-pwm-design.md`](docs/superpowers/specs/2026-07-11-spi-pwm-design.md) 裡的全貌表格。
 
 ## 版權
 
