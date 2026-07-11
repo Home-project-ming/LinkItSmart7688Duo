@@ -22,6 +22,12 @@ const atmegaBridgeBaud = 57600
 // during Phase B/C - 12 channels, A0-A11).
 const atmegaChannelCount = 12
 
+// validateAtmegaADCRead's timeout_ms is an overall wall-clock budget for a
+// multi-read loop that polls the bridge until a specific ANALOG_MESSAGE
+// for the requested channel arrives - not a single VTIME-bounded read like
+// uart_transact's. A zero timeout has no sensible meaning for that loop
+// (there is nothing to return non-blocking), so unlike
+// validateAtmegaBridgeRaw it is rejected here.
 func validateAtmegaADCRead(channel int, timeoutMs int) error {
 	if channel < 0 || channel >= atmegaChannelCount {
 		return fmt.Errorf("channel must be 0-%d, got %d", atmegaChannelCount-1, channel)
@@ -43,6 +49,11 @@ func AtmegaADCRead(channel int, timeoutMs int) (int, error) {
 	return atmegaADCRead(byte(channel), timeoutMs)
 }
 
+// validateAtmegaBridgeRaw mirrors validateUARTTransact's bounds exactly:
+// this is a single write followed by a single VTIME-bounded read, so a
+// zero timeout_ms is meaningful here (non-blocking - return whatever is
+// already buffered) and is therefore allowed, unlike
+// validateAtmegaADCRead's multi-read polling loop.
 func validateAtmegaBridgeRaw(txData []byte, timeoutMs int, maxReadBytes int) error {
 	if len(txData) > 256 {
 		return fmt.Errorf("tx_data length must be 0-256, got %d", len(txData))
