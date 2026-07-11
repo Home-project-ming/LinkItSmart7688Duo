@@ -62,6 +62,13 @@ func atmegaOpenBridge(subTimeoutDs uint8) (int, error) {
 // unix.Read() call inside atmegaADCRead's loop - a short, fixed pacing
 // value independent of the caller's own timeoutMs, not a user-facing
 // parameter (see design spec's "Read loop and timeout semantics").
+//
+// Known/accepted overshoot: because the deadline is only checked between
+// reads, a caller requesting a timeoutMs near the validated floor (1ms)
+// can still block for up to one full sub-timeout (~200ms) in practice
+// before the loop notices the deadline has passed. This is bounded, not
+// a hang, and is an intentional tradeoff for a simple polling loop - not
+// a bug to chase later.
 const atmegaReadLoopSubTimeoutDs = 2 // 200ms
 
 func atmegaADCRead(channel byte, timeoutMs int) (int, error) {
@@ -85,6 +92,11 @@ func atmegaADCRead(channel byte, timeoutMs int) (int, error) {
 		chunk := make([]byte, 64)
 		n, err := unix.Read(fd, chunk)
 		if err != nil {
+			// Best-effort cleanup only: we're already returning a real
+			// read error, so a second nested error about this
+			// best-effort disable attempt isn't worth the complexity -
+			// unlike the two tail sites below, this one intentionally
+			// does not check the write's result.
 			unix.Write(fd, encodeReportAnalog(channel, false))
 			return 0, fmt.Errorf("read from %s: %w", atmegaBridgeDevPath, err)
 		}
@@ -104,16 +116,25 @@ func atmegaADCRead(channel byte, timeoutMs int) (int, error) {
 		}
 	}
 
-	if _, err := unix.Write(fd, encodeReportAnalog(channel, false)); err != nil {
-		if value >= 0 {
-			return value, nil
-		}
-		return 0, fmt.Errorf("write REPORT_ANALOG disable to %s: %w", atmegaBridgeDevPath, err)
-	}
+	// Unlike the mid-loop best-effort disable above, this final disable's
+	// result IS checked: it's the only chance to signal that the ATmega
+	// may have been left with REPORT_ANALOG still enabled on this
+	// channel, which is exactly the kind of stateful-protocol corruption
+	// atmegaBridgeMu exists to prevent - silently swallowing it here
+	// would route around that protection.
+	_, disableErr := unix.Write(fd, encodeReportAnalog(channel, false))
 
 	if value < 0 {
+		if disableErr != nil {
+			return 0, fmt.Errorf("timeout waiting for ANALOG_MESSAGE on channel %d after %dms (also failed to disable REPORT_ANALOG: %v)", channel, timeoutMs, disableErr)
+		}
 		return 0, fmt.Errorf("timeout waiting for ANALOG_MESSAGE on channel %d after %dms", channel, timeoutMs)
 	}
+
+	if disableErr != nil {
+		return 0, fmt.Errorf("read value %d on channel %d but failed to disable REPORT_ANALOG: %w", value, channel, disableErr)
+	}
+
 	return value, nil
 }
 
