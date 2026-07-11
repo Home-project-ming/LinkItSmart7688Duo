@@ -4,7 +4,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Status: scaffold.** This directory is a fresh project for the Seeed **LinkIt Smart 7688 Duo**. No source, build files, or CI exist yet. The sections below document the *board architecture* (durable, load-bearing context) and the *standard toolchains*. Sections marked **TODO** must be filled in — and any command verified — once real code lands. Do not invent project-specific commands; confirm them against actual files first.
+> **Status: active.** The MT7688-side MCP server (`mt7688-mcp-server/`, 13 tools: GPIO/I2C/SPI/PWM/UART/I2S/ATmega bridge) and the ATmega32U4-side Arduino firmware (`atmega-firmware/`) are both implemented, deployed, and live-verified against real hardware — see [`README.md`](README.md) for the current status summary. The sections below document the *board architecture* (durable, load-bearing context) and the *standard toolchains*. A few sections are still marked **TODO** where genuinely nothing in this repo has needed that capability yet (e.g. raw MIPS C cross-compilation) — don't invent commands for those; confirm against actual files first if/when that work starts.
 
 ## What this board is
 
@@ -28,11 +28,11 @@ The LinkIt Smart 7688 **Duo** carries **two independent processors** that talk t
 
 ## Working on the MT7688 (Linux/OpenWrt) side
 
-Access is over SSH; the board default is user `root` at `mylinkit.local` (or `192.168.100.1` when the board is its own AP). TODO: record this project's actual host/credentials/network setup.
+Access is over SSH; the board default is user `root` at `mylinkit.local` (or `192.168.100.1` when the board is its own AP), confirmed live host `192.168.50.216`. Full credential/SSH-key setup (which key, why `plink` doesn't work, the four legacy-algorithm overrides this old Dropbear needs) is documented in [`provisioning/README.md`](provisioning/README.md) — don't re-derive it, read that file.
 
-- **On-device package management:** `opkg update` / `opkg install <pkg>`. Runtimes commonly available: Python, Node.js, plus busybox userland. TODO: pin which runtimes/versions this project targets.
+- **On-device package management:** `opkg update` / `opkg install <pkg>`. Runtimes commonly available: Python, Node.js, plus busybox userland — though nothing currently shipped in this repo actually needs an on-device runtime (`mt7688-mcp-server` is a statically-linked Go binary with `CGO_ENABLED=0`, no interpreter dependency). If future work needs a specific on-device runtime version, pin it here when that happens.
 - **Deploy to board:** see "Run / test / lint" below for the MCP server's real `.\deploy.ps1` command; other code under this side should follow the same `scp`/SSH pattern until/unless it needs something different.
-- **Cross-compiling C for MIPS** (only if native/opkg is insufficient): use the LinkIt 7688 / OpenWrt SDK toolchain (`mipsel-openwrt-linux-*`). TODO: document the toolchain path and build invocation if this project ships compiled binaries.
+- **Cross-compiling C for MIPS** (only if native/opkg is insufficient): use the LinkIt 7688 / OpenWrt SDK toolchain (`mipsel-openwrt-linux-*`). Not yet needed by anything in this repo — `mt7688-mcp-server` uses Go's own built-in cross-compiler (`GOOS=linux GOARCH=mipsle`), no separate OpenWrt SDK/buildroot has ever had to be set up. TODO: document the toolchain path and build invocation if this project ever ships raw C.
 - **Run / test / lint (MCP server, `mt7688-mcp-server/`):**
   - Test: `go test ./...` (single test: `go test ./... -run TestName -v`)
   - Build for the board: `.\build.ps1` (cross-compiles `GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0`)
