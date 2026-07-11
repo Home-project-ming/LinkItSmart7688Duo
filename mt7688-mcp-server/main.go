@@ -99,6 +99,90 @@ func i2cWriteHandler(ctx context.Context, req *mcp.CallToolRequest, input I2CWri
 	return nil, I2CWriteOutput{OK: true}, nil
 }
 
+type SPITransferInput struct {
+	Mode        int   `json:"mode" jsonschema:"SPI mode 0-3 (CPOL/CPHA)"`
+	SpeedHz     int   `json:"speed_hz" jsonschema:"clock speed in Hz"`
+	BitsPerWord int   `json:"bits_per_word" jsonschema:"bits per word, 1-32"`
+	TxData      []int `json:"tx_data" jsonschema:"bytes to send (each 0-255); rx_data comes back the same length"`
+}
+type SPITransferOutput struct {
+	RxData []int  `json:"rx_data" jsonschema:"bytes received during the transfer, same length as tx_data"`
+	Device string `json:"device" jsonschema:"the /dev/spidev* node this transfer used"`
+}
+
+func spiTransferHandler(ctx context.Context, req *mcp.CallToolRequest, input SPITransferInput) (*mcp.CallToolResult, SPITransferOutput, error) {
+	txData := make([]byte, len(input.TxData))
+	for i, v := range input.TxData {
+		if v < 0 || v > 255 {
+			return nil, SPITransferOutput{}, fmt.Errorf("tx_data[%d] out of byte range (0-255): %d", i, v)
+		}
+		txData[i] = byte(v)
+	}
+	rxData, device, err := TransferSPI(input.Mode, input.SpeedHz, input.BitsPerWord, txData)
+	if err != nil {
+		return nil, SPITransferOutput{}, err
+	}
+	out := make([]int, len(rxData))
+	for i, b := range rxData {
+		out[i] = int(b)
+	}
+	return nil, SPITransferOutput{RxData: out, Device: device}, nil
+}
+
+type PWMConfigureInput struct {
+	Channel  int `json:"channel" jsonschema:"PWM channel: 0 (GPIO18) or 1 (GPIO19)"`
+	PeriodNs int `json:"period_ns" jsonschema:"PWM period in nanoseconds"`
+	DutyNs   int `json:"duty_ns" jsonschema:"PWM duty cycle in nanoseconds, must be 0-period_ns"`
+}
+type PWMConfigureOutput struct {
+	OK bool `json:"ok"`
+}
+
+func pwmConfigureHandler(ctx context.Context, req *mcp.CallToolRequest, input PWMConfigureInput) (*mcp.CallToolResult, PWMConfigureOutput, error) {
+	if err := ConfigurePWM(input.Channel, input.PeriodNs, input.DutyNs); err != nil {
+		return nil, PWMConfigureOutput{}, err
+	}
+	return nil, PWMConfigureOutput{OK: true}, nil
+}
+
+type PWMSetEnabledInput struct {
+	Channel int  `json:"channel" jsonschema:"PWM channel: 0 (GPIO18) or 1 (GPIO19)"`
+	Enabled bool `json:"enabled" jsonschema:"true to start the PWM output, false to stop it"`
+}
+type PWMSetEnabledOutput struct {
+	OK bool `json:"ok"`
+}
+
+func pwmSetEnabledHandler(ctx context.Context, req *mcp.CallToolRequest, input PWMSetEnabledInput) (*mcp.CallToolResult, PWMSetEnabledOutput, error) {
+	if err := SetPWMEnabled(input.Channel, input.Enabled); err != nil {
+		return nil, PWMSetEnabledOutput{}, err
+	}
+	return nil, PWMSetEnabledOutput{OK: true}, nil
+}
+
+type PWMReadInput struct {
+	Channel int `json:"channel" jsonschema:"PWM channel: 0 (GPIO18) or 1 (GPIO19)"`
+}
+type PWMReadOutput struct {
+	PeriodNs int    `json:"period_ns" jsonschema:"current period in nanoseconds"`
+	DutyNs   int    `json:"duty_ns" jsonschema:"current duty cycle in nanoseconds"`
+	Enabled  bool   `json:"enabled" jsonschema:"true if the PWM output is currently running"`
+	Polarity string `json:"polarity" jsonschema:"\"normal\" or \"inversed\""`
+}
+
+func pwmReadHandler(ctx context.Context, req *mcp.CallToolRequest, input PWMReadInput) (*mcp.CallToolResult, PWMReadOutput, error) {
+	state, err := ReadPWM(input.Channel)
+	if err != nil {
+		return nil, PWMReadOutput{}, err
+	}
+	return nil, PWMReadOutput{
+		PeriodNs: state.PeriodNs,
+		DutyNs:   state.DutyNs,
+		Enabled:  state.Enabled,
+		Polarity: state.Polarity,
+	}, nil
+}
+
 func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "linkit7688-hw", Version: "v0.1.0"}, nil)
 
@@ -107,6 +191,10 @@ func main() {
 	mcp.AddTool(server, &mcp.Tool{Name: "gpio_set_direction", Description: "Set a GPIO pin's direction (in/out)"}, gpioSetDirectionHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "i2c_read", Description: "Read bytes from an I2C device register on /dev/i2c-0; no repeated start, some devices may return stale data across the register-select/read boundary"}, i2cReadHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "i2c_write", Description: "Write bytes to an I2C device register on /dev/i2c-0"}, i2cWriteHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "spi_transfer", Description: "Full-duplex SPI transfer on the board's sole SPI device node. Send tx_data (dummy 0x00 bytes for a read-only transfer), get back rx_data of the same length."}, spiTransferHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "pwm_configure", Description: "Set a PWM channel's period and duty cycle in nanoseconds. Only channels 0 (GPIO18) and 1 (GPIO19) are supported."}, pwmConfigureHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "pwm_set_enabled", Description: "Start or stop a PWM channel's output. Call pwm_configure first to set a period/duty."}, pwmSetEnabledHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "pwm_read", Description: "Read a PWM channel's current period, duty cycle, enabled state, and polarity"}, pwmReadHandler)
 
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatal(err)

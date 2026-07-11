@@ -24,3 +24,21 @@ func TestI2CWriteHandler_DataElementNegative(t *testing.T) {
 		t.Fatal("expected error for negative data element, got nil")
 	}
 }
+
+func TestSPITransferHandler_DataElementOutOfRange(t *testing.T) {
+	_, _, err := spiTransferHandler(context.Background(), nil, SPITransferInput{
+		Mode: 0, SpeedHz: 1000000, BitsPerWord: 8, TxData: []int{1, 300, 2},
+	})
+	if err == nil {
+		t.Fatal("expected error for tx_data element > 255, got nil")
+	}
+}
+
+func TestSPITransferHandler_DataElementNegative(t *testing.T) {
+	_, _, err := spiTransferHandler(context.Background(), nil, SPITransferInput{
+		Mode: 0, SpeedHz: 1000000, BitsPerWord: 8, TxData: []int{-1},
+	})
+	if err == nil {
+		t.Fatal("expected error for negative tx_data element, got nil")
+	}
+}
