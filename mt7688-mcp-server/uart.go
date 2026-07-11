@@ -39,3 +39,14 @@ func validateUARTTransact(baudRate int, txData []byte, readTimeoutMs int, maxRea
 	}
 	return nil
 }
+
+// UARTTransact validates input then performs a write-then-timed-read
+// transaction against uartDevPath. Real termios/syscall work is in
+// uart_linux.go (uart_other.go stubs it out on non-linux dev machines),
+// mirroring the i2c.go / spi.go platform splits.
+func UARTTransact(baudRate int, txData []byte, readTimeoutMs int, maxReadBytes int) ([]byte, error) {
+	if err := validateUARTTransact(baudRate, txData, readTimeoutMs, maxReadBytes); err != nil {
+		return nil, err
+	}
+	return uartTransact(baudRate, txData, readTimeoutMs, maxReadBytes)
+}
