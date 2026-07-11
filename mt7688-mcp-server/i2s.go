@@ -3,8 +3,12 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
+	"os/exec"
+	"time"
 )
 
 // i2sMaxWAVBytes bounds the decoded WAV payload i2s_play accepts. Base64
@@ -36,3 +40,46 @@ func decodeWAV(wavBase64 string) ([]byte, error) {
 	}
 	return data, nil
 }
+
+// PlayI2S decodes and validates wavBase64, then plays it through the
+// board's audio output via aplay - the first tool in this server to
+// spawn a subprocess rather than doing direct syscall/ioctl/sysfs work.
+// See design doc's "Implementation approach" section for why: ALSA PCM
+// programming has no x/sys/unix built-in support the way termios did,
+// and aplay is already proven working end-to-end on this exact hardware
+// (unlike arecord, which reliably wedges the board - see design doc's
+// "Investigation" section - which is why there is no PlayI2S counterpart
+// for recording).
+func PlayI2S(wavBase64 string) error {
+	data, err := decodeWAV(wavBase64)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), i2sPlaybackTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "aplay", "-D", i2sDevice, "-q")
+	cmd.Stdin = bytes.NewReader(data)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return fmt.Errorf("aplay timed out after %s - if this recurs, the board may need a reboot (see design doc's capture-hang findings for the same failure class on the record path): %w", i2sPlaybackTimeout, err)
+		}
+		return fmt.Errorf("aplay failed: %w (stderr: %s)", err, stderr.String())
+	}
+	return nil
+}
+
+// i2sDevice is the ALSA device targeted directly (not plug:-wrapped),
+// matching what was actually tested live - see design doc's "Non-goals"
+// section on why automatic format conversion isn't provided.
+const i2sDevice = "hw:0,0"
+
+// i2sPlaybackTimeout is a generous safety net against aplay hanging, not
+// a tight bound on normal playback time - comfortably above the
+// ~6.25-second worst-case duration implied by i2sMaxWAVBytes at the
+// lowest supported bitrate (8kHz mono).
+const i2sPlaybackTimeout = 30 * time.Second
