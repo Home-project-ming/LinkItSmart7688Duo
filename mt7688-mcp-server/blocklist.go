@@ -5,6 +5,10 @@ package main
 import "fmt"
 
 var blockedPins = map[int]string{
+	0:  "I2S (i2s pinmux group, WM8960 codec)",
+	1:  "I2S (i2s pinmux group, WM8960 codec)",
+	2:  "I2S (i2s pinmux group, WM8960 codec)",
+	3:  "I2S (i2s pinmux group, WM8960 codec)",
 	6:  "SPI CS1 (spi_cs1 pinmux group)",
 	7:  "SPI bus (fixed-function pin, no GPIO alternative)",
 	8:  "SPI bus (fixed-function pin, no GPIO alternative)",
