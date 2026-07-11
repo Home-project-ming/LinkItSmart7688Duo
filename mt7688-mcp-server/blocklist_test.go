@@ -5,7 +5,7 @@ package main
 import "testing"
 
 func TestCheckBlocked_BlockedPins(t *testing.T) {
-	blocked := []int{6, 7, 8, 9, 10, 12, 13, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 38}
+	blocked := []int{6, 7, 8, 9, 10, 12, 13, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 38, 45, 46}
 	for _, pin := range blocked {
 		if err := CheckBlocked(pin); err == nil {
 			t.Errorf("pin %d: expected error, got nil", pin)

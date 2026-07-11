@@ -25,6 +25,8 @@ var blockedPins = map[int]string{
 	28: "SDXC/extroot",
 	29: "SDXC/extroot",
 	38: "ATmega ISP reset (held by the core)",
+	45: "UART1 (uart1 pinmux group)",
+	46: "UART1 (uart1 pinmux group)",
 }
 
 func CheckBlocked(pin int) error {
