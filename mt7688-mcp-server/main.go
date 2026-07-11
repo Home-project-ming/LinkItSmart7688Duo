@@ -212,6 +212,20 @@ func uartTransactHandler(ctx context.Context, req *mcp.CallToolRequest, input UA
 	return nil, UARTTransactOutput{RxData: out}, nil
 }
 
+type I2SPlayInput struct {
+	WavBase64 string `json:"wav_base64" jsonschema:"base64-encoded WAV audio to play (max 100000 decoded bytes, roughly 6 seconds at 8kHz mono)"`
+}
+type I2SPlayOutput struct {
+	OK bool `json:"ok"`
+}
+
+func i2sPlayHandler(ctx context.Context, req *mcp.CallToolRequest, input I2SPlayInput) (*mcp.CallToolResult, I2SPlayOutput, error) {
+	if err := PlayI2S(input.WavBase64); err != nil {
+		return nil, I2SPlayOutput{}, err
+	}
+	return nil, I2SPlayOutput{OK: true}, nil
+}
+
 func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "linkit7688-hw", Version: "v0.1.0"}, nil)
 
@@ -225,6 +239,7 @@ func main() {
 	mcp.AddTool(server, &mcp.Tool{Name: "pwm_set_enabled", Description: "Start or stop a PWM channel's output. Call pwm_configure first to set a period/duty."}, pwmSetEnabledHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "pwm_read", Description: "Read a PWM channel's current period, duty cycle, enabled state, and polarity"}, pwmReadHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "uart_transact", Description: "Write bytes to /dev/ttyS1 (uart1, pins 45/46) and read back whatever arrives within read_timeout_ms. tx_data may be empty for a read-only/listen call. A timeout with no data is not an error - it means nothing was received in the window."}, uartTransactHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "i2s_play", Description: "Play a WAV audio clip through the board's speaker/headphone output. Blocks until playback completes. Max 100000 bytes of decoded WAV data (roughly 6 seconds at 8kHz mono). Recording is not available - the board's capture path has a confirmed driver-level bug that hangs the device."}, i2sPlayHandler)
 
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatal(err)
