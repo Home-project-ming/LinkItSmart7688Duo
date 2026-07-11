@@ -2,6 +2,19 @@
 
 # ATmega Bridge Phase C: ADC Firmware Implementation Plan
 
+Status: implemented, verified live on real hardware 2026-07-11
+
+## Live verification (2026-07-11)
+
+All three tasks executed and verified for real:
+
+- Task 1 (Firmata library investigation): hit and fixed an unrelated environment blocker (`arduino-cli lib install` failing under this machine's OneDrive-redirected Documents folder — fixed via `directories.user` in `arduino-cli.yaml`). All 6 planned findings confirmed against the real installed library source (independently re-verified by a second subagent reading the same files): `begin(Stream&)` exists, `attach()`/`sendAnalog()` signatures match, `REPORT_ANALOG`/`ANALOG_MESSAGE` are exactly `0xC0`/`0xE0`, and `NUM_ANALOG_INPUTS` turned out to be a non-issue — Firmata's `Boards.h` hardcodes `TOTAL_ANALOG_PINS 12` for `__AVR_ATmega32U4__` independent of the board's own (incomplete) `pins_arduino.h`.
+- Task 2 (sketch): compiled clean on the first try (8492/28672 bytes, 29%). Code quality review caught one real issue — the header comment claimed only two Firmata message types are ever sent, but `Firmata.begin(Serial1)` internally fires an unsolicited one-time `REPORT_VERSION` (`0xF9`) at boot via the library's own `printVersion()`. Fixed as a comment-only correction (`762da43`) so Phase D isn't surprised by it later; no functional code changed.
+- Task 3 (flash + verify): flashed successfully via `run-avrdude` (8492 bytes written and verified). **The bridge UART device node was confirmed as `/dev/ttyS0`** — not by elimination, but directly from `dmesg`'s pinmux allocation log (`uart0` group → pins 12/13 → `10000c00.uartlite` → `ttyS0`), now recorded in `CLAUDE.md`.
+  - **Deviation from the plan's Step 3-5:** the user explicitly declined the physical A0-to-3.3V/GND jumper wiring ("我不想動硬體，因為還要找ping腳很麻煩") and pointed out a floating analog pin should still produce a real (if noisy) reading. Verification was adapted accordingly: `REPORT_ANALOG` was enabled for channel 0 on `/dev/ttyS0` with A0 left floating (default state, no jumper), and the raw bytes read back with `hexdump -C` (busybox on this board has neither `od` nor `timeout`, unlike what the plan assumed — used `hexdump -C` and `stty min/time` bounds instead). Result: a clean stream of 20 well-formed `ANALOG_MESSAGE` frames (`e0 <lsb> <msb>`), values jittering between 0-21 — consistent with real ADC noise on a floating pin, not a stuck/fake value. Disabling reporting (`REPORT_ANALOG` off) was then confirmed to stop the stream entirely (a follow-up read produced zero bytes). This is weaker than a deterministic 3.3V/GND reference test would have been (no proof the *value* is quantitatively correct, only that the protocol round-trip and enable/disable logic are), but was judged sufficient given the user's explicit preference — noted here honestly rather than silently upgraded to "fully verified."
+
+**Net result:** the firmware correctly implements the Phase B wire protocol end-to-end on real hardware — confirmed by directly reading raw bytes off the bridge UART, not just by a successful compile/flash. Phase D (MT7688-side Go decoder + MCP tool) is not built and is a separate future plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement ATmega-side firmware that speaks the ADC-only Firmata subset (`REPORT_ANALOG`/`ANALOG_MESSAGE`, channels 0-11, 57600 baud) designed in `docs/superpowers/specs/2026-07-11-atmega-phase-b-wire-protocol.md`, using the standard Firmata Arduino library, flashed to the real board and physically verified.
