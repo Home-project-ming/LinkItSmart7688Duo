@@ -33,9 +33,17 @@ func TestDecodeWAV_EmptyData(t *testing.T) {
 
 func TestDecodeWAV_TooLarge(t *testing.T) {
 	big := make([]byte, i2sMaxWAVBytes+1)
-	copy(big, validWAVBytes())
+	copy(big, validWAVBytes()) // content is irrelevant here - the size check runs before the magic-byte check
 	if _, err := decodeWAV(base64.StdEncoding.EncodeToString(big)); err == nil {
 		t.Fatal("expected error for data > i2sMaxWAVBytes, got nil")
+	}
+}
+
+func TestDecodeWAV_ExactlyAtCap(t *testing.T) {
+	atCap := make([]byte, i2sMaxWAVBytes)
+	copy(atCap, validWAVBytes())
+	if _, err := decodeWAV(base64.StdEncoding.EncodeToString(atCap)); err != nil {
+		t.Fatalf("expected nil for data exactly at i2sMaxWAVBytes, got %v", err)
 	}
 }
 
