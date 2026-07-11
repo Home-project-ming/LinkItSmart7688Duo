@@ -58,7 +58,7 @@ func parseFirmataMessages(buf []byte) ([]firmataMessage, []byte) {
 				return messages, buf[i:]
 			}
 			channel := b & 0x0F
-			value := int(buf[i+1]) | (int(buf[i+2]) << 7)
+			value := int(buf[i+1]&0x7F) | (int(buf[i+2]&0x7F) << 7)
 			messages = append(messages, firmataMessage{Channel: channel, Value: value})
 			i += 3
 		case b == firmataReportVersion:

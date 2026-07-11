@@ -97,6 +97,21 @@ func TestParseFirmataMessages_MultipleMessagesInOneBuffer(t *testing.T) {
 	}
 }
 
+func TestParseFirmataMessages_DataBytesMasked(t *testing.T) {
+	buf := []byte{0xE0, 0x05, 0xFF} // channel 0, data byte 2 has bit 7 set (corrupted)
+	messages, remaining := parseFirmataMessages(buf)
+	if len(messages) != 1 {
+		t.Fatalf("expected 1 message, got %d", len(messages))
+	}
+	want := 0x05 | ((0xFF & 0x7F) << 7)
+	if messages[0].Channel != 0 || messages[0].Value != want {
+		t.Fatalf("expected {channel:0 value:%d}, got %+v", want, messages[0])
+	}
+	if len(remaining) != 0 {
+		t.Fatalf("expected empty remainder, got %v", remaining)
+	}
+}
+
 func TestParseFirmataMessages_EmptyBuffer(t *testing.T) {
 	messages, remaining := parseFirmataMessages(nil)
 	if len(messages) != 0 || len(remaining) != 0 {
