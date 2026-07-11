@@ -60,3 +60,21 @@ func TestUartTransactHandler_DataElementNegative(t *testing.T) {
 		t.Fatal("expected error for negative tx_data element, got nil")
 	}
 }
+
+func TestAtmegaBridgeRawHandler_DataElementOutOfRange(t *testing.T) {
+	_, _, err := atmegaBridgeRawHandler(context.Background(), nil, AtmegaBridgeRawInput{
+		TxData: []int{1, 300, 2}, TimeoutMs: 100, MaxReadBytes: 256,
+	})
+	if err == nil {
+		t.Fatal("expected error for tx_data element > 255, got nil")
+	}
+}
+
+func TestAtmegaBridgeRawHandler_DataElementNegative(t *testing.T) {
+	_, _, err := atmegaBridgeRawHandler(context.Background(), nil, AtmegaBridgeRawInput{
+		TxData: []int{-1}, TimeoutMs: 100, MaxReadBytes: 256,
+	})
+	if err == nil {
+		t.Fatal("expected error for negative tx_data element, got nil")
+	}
+}
