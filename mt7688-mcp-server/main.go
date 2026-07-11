@@ -183,6 +183,35 @@ func pwmReadHandler(ctx context.Context, req *mcp.CallToolRequest, input PWMRead
 	}, nil
 }
 
+type UARTTransactInput struct {
+	BaudRate      int   `json:"baud_rate" jsonschema:"baud rate, 1-2500000"`
+	TxData        []int `json:"tx_data" jsonschema:"bytes to send (each 0-255); may be empty for a read-only/listen call"`
+	ReadTimeoutMs int   `json:"read_timeout_ms" jsonschema:"how long to wait for a reply, in milliseconds (0-25500, rounded down to the nearest 100ms); 0 means non-blocking"`
+	MaxReadBytes  int   `json:"max_read_bytes" jsonschema:"maximum bytes to read, 1-4096"`
+}
+type UARTTransactOutput struct {
+	RxData []int `json:"rx_data" jsonschema:"bytes received within the timeout window; may be shorter than max_read_bytes or empty if nothing arrived"`
+}
+
+func uartTransactHandler(ctx context.Context, req *mcp.CallToolRequest, input UARTTransactInput) (*mcp.CallToolResult, UARTTransactOutput, error) {
+	txData := make([]byte, len(input.TxData))
+	for i, v := range input.TxData {
+		if v < 0 || v > 255 {
+			return nil, UARTTransactOutput{}, fmt.Errorf("tx_data[%d] out of byte range (0-255): %d", i, v)
+		}
+		txData[i] = byte(v)
+	}
+	rxData, err := UARTTransact(input.BaudRate, txData, input.ReadTimeoutMs, input.MaxReadBytes)
+	if err != nil {
+		return nil, UARTTransactOutput{}, err
+	}
+	out := make([]int, len(rxData))
+	for i, b := range rxData {
+		out[i] = int(b)
+	}
+	return nil, UARTTransactOutput{RxData: out}, nil
+}
+
 func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "linkit7688-hw", Version: "v0.1.0"}, nil)
 
@@ -195,6 +224,7 @@ func main() {
 	mcp.AddTool(server, &mcp.Tool{Name: "pwm_configure", Description: "Set a PWM channel's period and duty cycle in nanoseconds. Only channels 0 (GPIO18) and 1 (GPIO19) are supported."}, pwmConfigureHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "pwm_set_enabled", Description: "Start or stop a PWM channel's output. Call pwm_configure first to set a period/duty."}, pwmSetEnabledHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "pwm_read", Description: "Read a PWM channel's current period, duty cycle, enabled state, and polarity"}, pwmReadHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "uart_transact", Description: "Write bytes to /dev/ttyS1 (uart1, pins 45/46) and read back whatever arrives within read_timeout_ms. tx_data may be empty for a read-only/listen call. A timeout with no data is not an error - it means nothing was received in the window."}, uartTransactHandler)
 
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatal(err)

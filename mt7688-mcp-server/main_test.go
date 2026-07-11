@@ -42,3 +42,21 @@ func TestSPITransferHandler_DataElementNegative(t *testing.T) {
 		t.Fatal("expected error for negative tx_data element, got nil")
 	}
 }
+
+func TestUartTransactHandler_DataElementOutOfRange(t *testing.T) {
+	_, _, err := uartTransactHandler(context.Background(), nil, UARTTransactInput{
+		BaudRate: 9600, TxData: []int{1, 300, 2}, ReadTimeoutMs: 100, MaxReadBytes: 256,
+	})
+	if err == nil {
+		t.Fatal("expected error for tx_data element > 255, got nil")
+	}
+}
+
+func TestUartTransactHandler_DataElementNegative(t *testing.T) {
+	_, _, err := uartTransactHandler(context.Background(), nil, UARTTransactInput{
+		BaudRate: 9600, TxData: []int{-1}, ReadTimeoutMs: 100, MaxReadBytes: 256,
+	})
+	if err == nil {
+		t.Fatal("expected error for negative tx_data element, got nil")
+	}
+}
