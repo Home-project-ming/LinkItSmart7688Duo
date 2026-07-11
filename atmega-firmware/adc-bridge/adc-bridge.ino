@@ -6,8 +6,20 @@
 // or disables periodic reporting for one of this board's 12 analog
 // channels, 0-11 = A0-A11) and ANALOG_MESSAGE (this firmware's periodic
 // reply, a 14-bit value in Firmata's standard 2x7-bit encoding). No
-// digital I/O, no SysEx - the bridge protocol is scoped to ADC reads only
-// for v1.
+// digital I/O, no SysEx handling is implemented by this sketch - the
+// ADC-reporting protocol this firmware actively speaks is scoped to
+// REPORT_ANALOG/ANALOG_MESSAGE only for v1.
+//
+// Wire-format note for Phase D (the future MT7688-side decoder): the wire
+// is NOT limited to just those two message types. `Firmata.begin(Serial1)`
+// in setup() below internally calls the library's own printVersion()
+// (confirmed by reading Firmata.cpp:140 in the actual installed library),
+// which unconditionally sends one unsolicited 3-byte REPORT_VERSION
+// message (0xF9, major, minor) over Serial1 at every boot, before any
+// REPORT_ANALOG request has been received. This is stock Firmata
+// behavior, not something this sketch opts into or can easily suppress
+// without bypassing Firmata's public begin() API, so it was left as-is -
+// Phase D's decoder must expect and tolerate this boot-time message.
 //
 // ANALOG_CHANNEL_COUNT is defined locally (not taken from a
 // NUM_ANALOG_INPUTS/TOTAL_ANALOG_PINS macro) because this board's vendor
