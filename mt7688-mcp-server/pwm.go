@@ -33,14 +33,14 @@ func validatePWMChannel(channel int) error {
 func exportPWM(channel int) error {
 	f, err := os.OpenFile(pwmSysfsPath+"/export", os.O_WRONLY, 0)
 	if err != nil {
-		return fmt.Errorf("open export: %w", err)
+		return fmt.Errorf("open export for channel %d: %w", channel, err)
 	}
 	defer f.Close()
 	if _, err := f.WriteString(strconv.Itoa(channel)); err != nil {
 		if errors.Is(err, syscall.EBUSY) {
 			return nil // already exported by a concurrent session
 		}
-		return fmt.Errorf("write export: %w", err)
+		return fmt.Errorf("write export for channel %d: %w", channel, err)
 	}
 	return nil
 }
@@ -53,7 +53,7 @@ func readPWMAttr(channel int, attr string) (string, error) {
 	path := pwmChannelPath(channel) + "/" + attr
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return "", fmt.Errorf("read %s: %w", attr, err)
+		return "", fmt.Errorf("read pwm%d/%s: %w", channel, attr, err)
 	}
 	return strings.TrimSpace(string(data)), nil
 }
@@ -62,13 +62,29 @@ func writePWMAttr(channel int, attr string, value string) error {
 	path := pwmChannelPath(channel) + "/" + attr
 	f, err := os.OpenFile(path, os.O_WRONLY, 0)
 	if err != nil {
-		return fmt.Errorf("open %s: %w", attr, err)
+		return fmt.Errorf("open pwm%d/%s: %w", channel, attr, err)
 	}
 	defer f.Close()
 	if _, err := f.WriteString(value); err != nil {
-		return fmt.Errorf("write %s: %w", attr, err)
+		return fmt.Errorf("write pwm%d/%s: %w", channel, attr, err)
 	}
 	return nil
+}
+
+// pwmWritePeriodFirst reports whether writing period before duty_cycle is
+// safe, given currentPeriod (period currently on the device) and
+// newPeriod (the validated target period). The sysfs PWM ABI requires
+// duty_cycle <= period at every intermediate step. Since duty_cycle <=
+// period is always true of the pre-call state (by induction - every
+// write this function guards leaves that invariant intact, and a fresh
+// export starts at period=0, duty_cycle=0), comparing periods alone is
+// sufficient: writing period first is safe whenever newPeriod >=
+// currentPeriod (the old duty_cycle still fits under the new, larger-or-
+// equal period), and writing duty_cycle first is safe whenever newPeriod
+// < currentPeriod (the new duty_cycle, already validated <= newPeriod,
+// therefore also fits under the still-larger currentPeriod).
+func pwmWritePeriodFirst(currentPeriod, newPeriod int) bool {
+	return newPeriod >= currentPeriod
 }
 
 // ConfigurePWM sets channel's period and duty cycle (both in
@@ -76,7 +92,9 @@ func writePWMAttr(channel int, attr string, value string) error {
 // times - writing duty_cycle first when it wouldn't fit under the
 // *current* period fails. This reads the current period first and picks
 // a write order that never violates the constraint mid-update (see
-// design doc, "PWM write ordering").
+// design doc, "PWM write ordering"; see pwmWritePeriodFirst for why
+// comparing periods, not duty, is sufficient - the design doc's
+// duty-based phrasing is imprecise, don't "fix" this to match it).
 func ConfigurePWM(channel int, periodNs int, dutyNs int) error {
 	if err := validatePWMChannel(channel); err != nil {
 		return err
@@ -100,7 +118,7 @@ func ConfigurePWM(channel int, periodNs int, dutyNs int) error {
 		return fmt.Errorf("parse current period %q: %w", currentPeriodStr, err)
 	}
 
-	if periodNs >= currentPeriod {
+	if pwmWritePeriodFirst(currentPeriod, periodNs) {
 		if err := writePWMAttr(channel, "period", strconv.Itoa(periodNs)); err != nil {
 			return err
 		}

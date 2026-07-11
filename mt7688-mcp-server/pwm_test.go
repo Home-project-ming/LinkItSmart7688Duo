@@ -46,3 +46,21 @@ func TestReadPWM_InvalidChannel(t *testing.T) {
 		t.Fatal("expected error for unverified channel 2, got nil")
 	}
 }
+
+func TestPwmWritePeriodFirst(t *testing.T) {
+	cases := []struct {
+		currentPeriod, newPeriod int
+		want                     bool
+	}{
+		{1000, 1500, true}, // increasing period: period-first
+		{1000, 500, false}, // decreasing period: duty-first
+		{1000, 1000, true}, // unchanged period: period-first (boundary, either is safe, period-first is the >= branch)
+		{0, 1, true},       // fresh export (period=0): always period-first
+	}
+	for _, c := range cases {
+		got := pwmWritePeriodFirst(c.currentPeriod, c.newPeriod)
+		if got != c.want {
+			t.Errorf("pwmWritePeriodFirst(%d, %d) = %v, want %v", c.currentPeriod, c.newPeriod, got, c.want)
+		}
+	}
+}
