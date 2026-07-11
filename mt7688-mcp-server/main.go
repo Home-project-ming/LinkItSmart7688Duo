@@ -226,6 +226,50 @@ func i2sPlayHandler(ctx context.Context, req *mcp.CallToolRequest, input I2SPlay
 	return nil, I2SPlayOutput{OK: true}, nil
 }
 
+type AtmegaADCReadInput struct {
+	Channel   int `json:"channel" jsonschema:"analog channel to read, 0-11 (A0-A11)"`
+	TimeoutMs int `json:"timeout_ms" jsonschema:"how long to wait for a reading, in milliseconds (1-10000)"`
+}
+type AtmegaADCReadOutput struct {
+	Value int `json:"value" jsonschema:"the ATmega's raw 10-bit ADC reading, 0-1023"`
+}
+
+func atmegaADCReadHandler(ctx context.Context, req *mcp.CallToolRequest, input AtmegaADCReadInput) (*mcp.CallToolResult, AtmegaADCReadOutput, error) {
+	value, err := AtmegaADCRead(input.Channel, input.TimeoutMs)
+	if err != nil {
+		return nil, AtmegaADCReadOutput{}, err
+	}
+	return nil, AtmegaADCReadOutput{Value: value}, nil
+}
+
+type AtmegaBridgeRawInput struct {
+	TxData       []int `json:"tx_data" jsonschema:"raw bytes to send over the ATmega bridge (each 0-255); may be empty for a read-only/listen call"`
+	TimeoutMs    int   `json:"timeout_ms" jsonschema:"how long to wait for a reply, in milliseconds (0-25500, rounded down to the nearest 100ms); 0 means non-blocking"`
+	MaxReadBytes int   `json:"max_read_bytes" jsonschema:"maximum bytes to read, 1-4096"`
+}
+type AtmegaBridgeRawOutput struct {
+	RxData []int `json:"rx_data" jsonschema:"bytes received within the timeout window; may be shorter than max_read_bytes or empty if nothing arrived"`
+}
+
+func atmegaBridgeRawHandler(ctx context.Context, req *mcp.CallToolRequest, input AtmegaBridgeRawInput) (*mcp.CallToolResult, AtmegaBridgeRawOutput, error) {
+	txData := make([]byte, len(input.TxData))
+	for i, v := range input.TxData {
+		if v < 0 || v > 255 {
+			return nil, AtmegaBridgeRawOutput{}, fmt.Errorf("tx_data[%d] out of byte range (0-255): %d", i, v)
+		}
+		txData[i] = byte(v)
+	}
+	rxData, err := AtmegaBridgeRaw(txData, input.TimeoutMs, input.MaxReadBytes)
+	if err != nil {
+		return nil, AtmegaBridgeRawOutput{}, err
+	}
+	out := make([]int, len(rxData))
+	for i, b := range rxData {
+		out[i] = int(b)
+	}
+	return nil, AtmegaBridgeRawOutput{RxData: out}, nil
+}
+
 func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "linkit7688-hw", Version: "v0.1.0"}, nil)
 
@@ -240,6 +284,8 @@ func main() {
 	mcp.AddTool(server, &mcp.Tool{Name: "pwm_read", Description: "Read a PWM channel's current period, duty cycle, enabled state, and polarity"}, pwmReadHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "uart_transact", Description: "Write bytes to /dev/ttyS1 (uart1, pins 45/46) and read back whatever arrives within read_timeout_ms. tx_data may be empty for a read-only/listen call. A timeout with no data is not an error - it means nothing was received in the window."}, uartTransactHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "i2s_play", Description: "Play a WAV audio clip through the board's speaker/headphone output. Blocks until playback completes. Max 100000 bytes of decoded WAV data (roughly 6 seconds at 8kHz mono). Recording is not available - the board's capture path has a confirmed driver-level bug that hangs the device."}, i2sPlayHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "atmega_adc_read", Description: "Read one analog channel (0-11, A0-A11) from the ATmega32U4 side over the UART bridge (/dev/ttyS0), using the Firmata REPORT_ANALOG/ANALOG_MESSAGE protocol. Blocks until a reading for that channel arrives or timeout_ms elapses."}, atmegaADCReadHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "atmega_bridge_raw", Description: "Send raw bytes to the ATmega32U4 over the UART bridge (/dev/ttyS0, fixed 57600 baud) and read back whatever arrives within timeout_ms. Low-level escape hatch for speaking Firmata (or any future ATmega firmware protocol) directly; most callers should use atmega_adc_read instead."}, atmegaBridgeRawHandler)
 
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatal(err)
