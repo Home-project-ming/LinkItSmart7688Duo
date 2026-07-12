@@ -13,3 +13,5 @@ mt7688-mcp-server/*.exe
 
 # Worktrees (if the git-fallback worktree mechanism is used)
 .worktrees/
+# Worktrees created by Claude Code's native EnterWorktree tool
+.claude/worktrees/
