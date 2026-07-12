@@ -3,6 +3,8 @@ name: mt7688-hardware
 description: Use when calling, choosing between, or troubleshooting any linkit7688-hw MCP tool (gpio_read/write/set_direction, i2c_read/write, spi_transfer, pwm_configure/set_enabled/read, uart_transact, i2s_play, atmega_adc_read, atmega_bridge_raw) that controls the LinkIt Smart 7688 Duo board's hardware — covers safety limits, which tool fits a task, and gotchas not visible from a tool's JSON schema alone.
 ---
 
+<!-- Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan) -->
+
 # LinkIt Smart 7688 Duo hardware tools
 
 ## Overview

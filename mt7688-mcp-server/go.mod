@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
+
 module mt7688-mcp-server
 
 go 1.26.3
