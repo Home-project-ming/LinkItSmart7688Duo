@@ -305,7 +305,7 @@
       <span class="label">ATmega 橋接</span>
       <a href="#bridge-result">結果</a>
       <a href="#bridge-traps">坑 · 喚醒第二顆晶片</a>
-      <a href="#bridge-open">黑名單腳位<span class="chip">未解</span></a>
+      <a href="#bridge-open">黑名單腳位<span class="chip">已修</span></a>
     </div>
     <div class="group">
       <span class="label">附錄</span>
@@ -1018,15 +1018,24 @@ wifi reload</pre>
 </section>
 
 <section id="bridge-open">
-  <h2>未解 · 黑名單裡記錯腳位的「ISP reset」 <span class="status partial">已標記</span></h2>
-  <div class="callout warn">
-    <h3>證據指向 pin 3,黑名單寫的是 pin 38</h3>
+  <h2>已修 · 黑名單裡記錯腳位的「ISP reset」 <span class="status ok">2026-07-12 修正</span></h2>
+  <p>
+    板上的 <code>/etc/avrdude.conf</code> 和 Developer's Guide 的 pin-out 圖都說
+    ISP reset 線是 GPIO <strong>3</strong>;黑名單裡標「ATmega ISP reset」的卻是
+    pin <strong>38</strong>。pin 3 一度只是恰好因為 I2S(0–3 整段)被擋住——
+    哪天有人覺得「我不用音訊,pin 3 解鎖沒差」,就會在韌體運作中把 ATmega 重置。
+  </p>
+  <div class="callout">
+    <h3>實地查證後真相:pin 38 其實是 Wi-Fi Reset 按鈕</h3>
     <p>
-      板上的 <code>/etc/avrdude.conf</code> 和 Developer's Guide 的 pin-out 圖都說
-      ISP reset 線是 GPIO <strong>3</strong>;黑名單裡標「ATmega ISP reset」的卻是
-      pin <strong>38</strong>。pin 3 目前恰好因為 I2S(0–3 整段)被擋住,實務上安全——
-      但擋它的理由文字隻字未提 ISP。哪天有人覺得「我不用音訊,pin 3 解鎖沒差」,
-      就會在韌體運作中把 ATmega 重置。已標記在 <code>CLAUDE.md</code>,還沒修。
+      <code>/sys/kernel/debug/gpio</code> 顯示 gpio-38 被 kernel 以<strong>輸入腳</strong>持有,
+      對應 device tree 的 <code>gpio-keys-polled/wps</code> 節點(label "reset"、
+      <code>linux,code</code> = KEY_WPS_BUTTON)——它是板上的 Wi-Fi Reset 按鈕,
+      跟 ATmega 毫無關係;當初「ATmega ISP reset」是從 pinmux 群組名間接猜的。
+      修正:pin 3 的封鎖理由現在同時寫明兩個角色(I2S + ATmega ISP reset),
+      pin 38 維持封鎖、改用正確理由;措辭由迴歸測試
+      <code>TestCheckBlocked_ResetPinReasons</code> 鎖住,並對部署後的 server
+      實機驗證過兩支腳位回傳的錯誤訊息。
     </p>
   </div>
 </section>

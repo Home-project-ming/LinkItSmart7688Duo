@@ -34,18 +34,19 @@ and traps that only show up once you actually call something.
 `gpio_read`/`gpio_write`/`gpio_set_direction` reject certain pins outright
 (`"gpio N is blocked: <reason>"`). **This is the safety net working as
 intended, not a bug to work around.** Every blocked pin is already
-claimed by another peripheral this server exposes its own dedicated tool
-for:
+claimed by another role on the board — usually a peripheral this server
+exposes its own dedicated tool for:
 
 | Pins | Claimed by |
 |---|---|
-| 0-3 | I2S (WM8960 codec) |
+| 0-2 | I2S (WM8960 codec) |
+| 3 | I2S **and** the ATmega ISP reset line — driving it resets the ATmega mid-operation, killing whatever `atmega_adc_read`/`atmega_bridge_raw` depend on |
 | 6-10 | SPI bus |
 | 12-13 | ATmega bridge UART (`uart0`, `/dev/ttyS0`) |
 | 18-19 | PWM channels 0/1 |
 | 20-21 | Console |
 | 22-29 | SD/extroot |
-| 38 | Labeled "ATmega ISP reset" in the blocklist — this label is likely **wrong** (real evidence points to pin 3 for that role; pin 3 is separately already blocked, for I2S reasons, so it's protected in practice even though the blocklist's stated reason for it doesn't mention ISP reset). Don't rely on pin 38's label being accurate. |
+| 38 | Wi-Fi reset button (held by the kernel as a gpio-keys input). Historically mislabeled "ATmega ISP reset" — that role belongs to pin 3. |
 | 45-46 | `uart_transact`'s UART (`uart1`) |
 
 If a `gpio_*` call fails with a blocked-pin error, **don't retry with

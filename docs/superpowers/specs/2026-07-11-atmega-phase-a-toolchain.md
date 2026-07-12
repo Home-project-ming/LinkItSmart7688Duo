@@ -137,7 +137,13 @@ B/C/D are not designed yet and are out of scope for this document.
   spec — it doesn't block Phase A (nothing here calls the MCP server's
   `gpio_write` on pin 3), and there's no real ATmega firmware yet for a
   stray reset to actually disrupt. Tracked for a future fix, not deferred
-  indefinitely.
+  indefinitely. **(Resolved 2026-07-12:** pin 3's blocklist reason now
+  names both of its roles; pin 38 was live-identified — via
+  `/sys/kernel/debug/gpio` and the `gpio-keys-polled/wps` device-tree
+  node (label "reset", KEY_WPS_BUTTON) — as the board's **Wi-Fi Reset
+  button** input, held by the kernel, and stays blocked under that
+  corrected reason. See `blocklist.go` and
+  `TestCheckBlocked_ResetPinReasons`.)
 
 ## Goals (Phase A)
 

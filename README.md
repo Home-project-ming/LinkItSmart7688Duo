@@ -95,14 +95,15 @@ design, ATmega firmware, MT7688-side decoder + MCP tools — see
 `docs/superpowers/specs/2026-07-11-atmega-phase-b-wire-protocol.md`,
 `docs/superpowers/specs/2026-07-11-atmega-phase-d-mcp-tools.md`, and the
 matching plan docs), live-verified against real hardware including a
-raw-byte round-trip decode of the Firmata protocol. There is one still-open correctness question tracked in `CLAUDE.md`:
-whether the GPIO blocklist's "ATmega ISP reset" entry is on the right pin
-number (real evidence points to pin 3, the blocklist currently says 38) —
-flagged, not yet fixed. This is worth fixing sooner rather than later now
-that the ATmega bridge is live: an MCP caller toggling GPIO 3 thinking
-it's "just an LED" would reset the ATmega mid-operation, since real
-firmware (and real MCP tools depending on it) now exists for a stray
-reset to actually disrupt.
+raw-byte round-trip decode of the Firmata protocol. The long-tracked
+blocklist correctness question (the "ATmega ISP reset" entry sat on pin
+38 while the real reset line is pin 3) was resolved 2026-07-12: pin 3's
+reason now names both of its roles (I2S + ATmega ISP reset), and pin 38
+turned out to be the board's Wi-Fi Reset button — held by the kernel as
+a gpio-keys input, live-verified via `/sys/kernel/debug/gpio` and the
+device tree — so it stays blocked under that corrected reason. The fix
+is regression-tested and was verified against the deployed server on
+real hardware.
 
 ## Copyright
 
