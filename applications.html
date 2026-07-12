@@ -1,0 +1,751 @@
+<!-- Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan) -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkIt Smart 7688 Duo × AI — 50 個實際生活應用</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.6.0/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --c1: #ff7043;  /* 烙鐵組:暖橘 */
+    --c1-bg: #fff3ee;
+    --c2: #42a5f5;  /* 模組組:亮藍 */
+    --c2-bg: #eef7ff;
+    --c3: #66bb6a;  /* 免動手組:亮綠 */
+    --c3-bg: #effaf0;
+    --ink: #2d3142;
+    --ink-soft: #5b617a;
+    --paper: #fffdf7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+    background: linear-gradient(160deg, #fffdf7 0%, #fff8e8 45%, #f2fbff 100%);
+    color: var(--ink);
+    line-height: 1.75;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* ── Hero ────────────────────────────── */
+  header.hero {
+    text-align: center;
+    padding: 64px 20px 36px;
+  }
+  header.hero h1 {
+    font-size: clamp(1.7rem, 4vw, 2.7rem);
+    background: linear-gradient(90deg, #ff7043, #ffb300, #42a5f5, #66bb6a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: .02em;
+  }
+  header.hero p.sub {
+    margin-top: 14px;
+    font-size: 1.08rem;
+    color: var(--ink-soft);
+  }
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+    margin-top: 26px;
+  }
+  .stat {
+    background: #fff;
+    border-radius: 999px;
+    padding: 8px 20px;
+    font-weight: 700;
+    box-shadow: 0 3px 12px rgba(45,49,66,.08);
+    font-size: .95rem;
+  }
+  .stat b { font-size: 1.15rem; margin-right: 4px; }
+  .stat.s1 b { color: var(--c1); }
+  .stat.s2 b { color: #ffb300; }
+  .stat.s3 b { color: var(--c2); }
+  .stat.s4 b { color: var(--c3); }
+
+  /* ── 區塊標題 ─────────────────────────── */
+  section { margin-top: 56px; }
+  h2 {
+    font-size: 1.55rem;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  h2 .tag {
+    font-size: .78rem; font-weight: 700; color: #fff;
+    border-radius: 8px; padding: 3px 10px; letter-spacing: .05em;
+  }
+  .panel {
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px 30px;
+    box-shadow: 0 6px 24px rgba(45,49,66,.07);
+  }
+
+  /* ── 板子示意圖 ───────────────────────── */
+  .board-flex { display: flex; flex-wrap: wrap; gap: 28px; align-items: center; }
+  .board-flex svg { flex: 1 1 480px; max-width: 100%; height: auto; }
+  .board-flex .board-note { flex: 1 1 320px; font-size: .98rem; color: var(--ink-soft); }
+  .board-note b { color: var(--ink); }
+  .board-note ul { margin: 10px 0 0 22px; }
+  .board-note li { margin: 6px 0; }
+
+  /* ── mermaid 容器 ─────────────────────── */
+  .diagram {
+    background: #fff;
+    border-radius: 16px;
+    padding: 18px;
+    margin: 20px 0 8px;
+    box-shadow: 0 4px 18px rgba(45,49,66,.06);
+    overflow-x: auto;
+    text-align: center;
+  }
+  .diagram pre.mermaid { text-align: center; }
+  .diagram-caption {
+    text-align: center; font-size: .88rem; color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+
+  /* ── 分類導覽 ─────────────────────────── */
+  nav.cats {
+    display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
+    margin-top: 34px;
+  }
+  nav.cats a {
+    text-decoration: none; color: #fff; font-weight: 700;
+    border-radius: 14px; padding: 14px 22px; font-size: 1rem;
+    box-shadow: 0 5px 16px rgba(45,49,66,.15);
+    transition: transform .15s;
+  }
+  nav.cats a:hover { transform: translateY(-3px); }
+  nav.cats a.n1 { background: linear-gradient(135deg, #ff7043, #ff9b6a); }
+  nav.cats a.n2 { background: linear-gradient(135deg, #42a5f5, #7ec3ff); }
+  nav.cats a.n3 { background: linear-gradient(135deg, #66bb6a, #93d996); }
+
+  /* ── 分類區 ───────────────────────────── */
+  .cat-intro {
+    border-radius: 20px;
+    padding: 26px 30px;
+    margin-bottom: 24px;
+  }
+  #cat1 .cat-intro { background: var(--c1-bg); border-left: 8px solid var(--c1); }
+  #cat2 .cat-intro { background: var(--c2-bg); border-left: 8px solid var(--c2); }
+  #cat3 .cat-intro { background: var(--c3-bg); border-left: 8px solid var(--c3); }
+  .cat-intro p { color: var(--ink-soft); margin-top: 6px; }
+  #cat1 h2 .tag { background: var(--c1); }
+  #cat2 h2 .tag { background: var(--c2); }
+  #cat3 h2 .tag { background: var(--c3); }
+
+  /* ── 卡片牆 ───────────────────────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 18px;
+    margin-top: 22px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 22px 16px;
+    box-shadow: 0 4px 16px rgba(45,49,66,.07);
+    display: flex; flex-direction: column;
+    border-top: 5px solid transparent;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 10px 26px rgba(45,49,66,.13); }
+  .card.k1 { border-top-color: var(--c1); }
+  .card.k2 { border-top-color: var(--c2); }
+  .card.k3 { border-top-color: var(--c3); }
+  .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .card-top .num {
+    font-weight: 800; font-size: .82rem; color: #fff;
+    border-radius: 8px; padding: 2px 9px;
+  }
+  .card.k1 .num { background: var(--c1); }
+  .card.k2 .num { background: var(--c2); }
+  .card.k3 .num { background: var(--c3); }
+  .card-top .emoji { font-size: 1.7rem; }
+  .card h4 { font-size: 1.12rem; margin-bottom: 6px; }
+  .card p.desc { font-size: .92rem; color: var(--ink-soft); flex: 1; }
+  .card .hw {
+    font-size: .84rem; margin-top: 12px; color: var(--ink-soft);
+    background: #f7f7fb; border-radius: 10px; padding: 7px 11px;
+  }
+  .card .toolrow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; }
+  .chip {
+    font-family: Consolas, monospace;
+    font-size: .72rem; font-weight: 600;
+    background: #eef1fb; color: #4a5384;
+    border-radius: 999px; padding: 2px 10px;
+  }
+  .chip.none { background: #f0f0f0; color: #999; font-family: inherit; }
+  .stars { margin-left: auto; font-size: .82rem; color: #ffb300; letter-spacing: 2px; white-space: nowrap; }
+  .stars .off { color: #e3e3e3; }
+
+  /* ── footer ──────────────────────────── */
+  footer {
+    margin-top: 70px; text-align: center;
+    font-size: .86rem; color: var(--ink-soft);
+    border-top: 1px dashed #ddd; padding-top: 24px;
+  }
+  footer .heart { color: #ff7043; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>🌈 LinkIt Smart 7688 Duo × AI<br>50 個實際生活應用</h1>
+  <p class="sub">一塊 1W 功耗的雙處理器小板 + 一個 MCP server = 讓 AI 用中文幫你操作真實世界 🪄</p>
+  <div class="stats">
+    <div class="stat s1"><b>2</b>顆處理器 🧠</div>
+    <div class="stat s2"><b>13</b>個 MCP 硬體工具 🧰</div>
+    <div class="stat s3"><b>~1W</b>常駐功耗 🔋</div>
+    <div class="stat s4"><b>50</b>個應用點子 💡</div>
+  </div>
+  <nav class="cats">
+    <a class="n1" href="#cat1">🔥 第 1 類:我會焊接!(17 個)</a>
+    <a class="n2" href="#cat2">🧩 第 2 類:我只買模組來接(17 個)</a>
+    <a class="n3" href="#cat3">☁️ 第 3 類:我完全不動手(16 個)</a>
+  </nav>
+</header>
+
+<!-- ═══════════════ 板子介紹 ═══════════════ -->
+<section id="board">
+  <h2>🔍 先認識這塊板子 <span class="tag" style="background:#ffb300">2 顆晶片、1 條橋</span></h2>
+  <div class="panel board-flex">
+    <svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LinkIt Smart 7688 Duo 板子示意圖">
+      <!-- PCB -->
+      <rect x="30" y="40" width="580" height="280" rx="18" fill="#1b7f4d" stroke="#0e5c36" stroke-width="3"/>
+      <!-- 上下排針 -->
+      <g fill="#f4c542">
+        <rect x="70" y="48" width="500" height="14" rx="4"/>
+        <rect x="70" y="298" width="500" height="14" rx="4"/>
+      </g>
+      <text x="320" y="35" text-anchor="middle" font-size="13" fill="#555">GPIO / I2C / SPI / PWM / UART 排針</text>
+      <!-- 天線 -->
+      <path d="M560 90 q30 -25 0 -50" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M572 96 q46 -38 0 -74" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".65"/>
+      <text x="545" y="112" text-anchor="end" font-size="13" fill="#fff">📶 WiFi 2.4GHz</text>
+      <!-- MT7688 -->
+      <rect x="90" y="105" width="170" height="130" rx="10" fill="#37474f" stroke="#111" stroke-width="2"/>
+      <text x="175" y="155" text-anchor="middle" font-size="20" font-weight="bold" fill="#fff">MT7688</text>
+      <text x="175" y="180" text-anchor="middle" font-size="12" fill="#cfd8dc">OpenWrt Linux</text>
+      <text x="175" y="200" text-anchor="middle" font-size="12" fill="#cfd8dc">WiFi・USB・SD 卡</text>
+      <text x="175" y="220" text-anchor="middle" font-size="12" fill="#cfd8dc">跑 MCP server 📡</text>
+      <!-- ATmega -->
+      <rect x="390" y="120" width="140" height="100" rx="10" fill="#4527a0" stroke="#2a1770" stroke-width="2"/>
+      <text x="460" y="158" text-anchor="middle" font-size="17" font-weight="bold" fill="#fff">ATmega32U4</text>
+      <text x="460" y="180" text-anchor="middle" font-size="12" fill="#d1c4e9">Arduino 相容</text>
+      <text x="460" y="200" text-anchor="middle" font-size="12" fill="#d1c4e9">12 路類比輸入 📈</text>
+      <!-- 橋接 -->
+      <g stroke="#ffd54f" stroke-width="5" fill="none">
+        <path d="M262 170 H 388" marker-end="url(#arr)"/>
+        <path d="M388 190 H 262" marker-end="url(#arr)"/>
+      </g>
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="#ffd54f"/>
+        </marker>
+      </defs>
+      <text x="325" y="152" text-anchor="middle" font-size="13" fill="#ffe082" font-weight="bold">UART 橋接</text>
+      <text x="325" y="215" text-anchor="middle" font-size="12" fill="#ffe082">Firmata 協定 🌉</text>
+      <!-- USB / SD -->
+      <rect x="30" y="250" width="46" height="34" rx="4" fill="#b0bec5" stroke="#78909c"/>
+      <text x="86" y="272" font-size="12" fill="#fff">USB Host 🔌</text>
+      <rect x="30" y="120" width="40" height="30" rx="4" fill="#b0bec5" stroke="#78909c"/>
+      <text x="80" y="140" font-size="12" fill="#fff">Micro SD 💾</text>
+      <rect x="564" y="250" width="46" height="34" rx="4" fill="#b0bec5" stroke="#78909c"/>
+      <text x="556" y="272" text-anchor="end" font-size="12" fill="#fff">🔌 MCU USB / 電源</text>
+    </svg>
+    <div class="board-note">
+      <p><b>LinkIt Smart 7688 Duo</b> 的重點就在「Duo」——兩顆個性完全不同的處理器,由一條 UART 橋接起來:</p>
+      <ul>
+        <li>🧠 <b>MT7688</b>:跑 Linux,負責 WiFi、網路服務、USB、SD 卡,也是 MCP server 的家</li>
+        <li>🎛️ <b>ATmega32U4</b>:Arduino 相容,負責即時 I/O 和 <b>類比輸入</b>(MT7688 自己完全沒有 ADC!)</li>
+        <li>🌉 <b>橋</b>:AI 下的指令穿過這條 UART,就能讀到真實世界的類比訊號</li>
+      </ul>
+      <p style="margin-top:12px">本專案的 MCP server 提供 13 個工具:GPIO 讀寫、I2C、SPI、PWM、UART、I2S 音訊播放、ATmega ADC 橋接——AI 一句話就能呼叫。</p>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+    U["🧑 你(說中文就好)"] --> C["🤖 Claude AI(雲端大腦)"]
+    C -->|"MCP over SSH"| S["📡 MCP Server<br>MT7688・OpenWrt Linux"]
+    S -->|"GPIO / I2C / SPI / PWM / UART / I2S"| P["🔌 感測器・模組・喇叭"]
+    S -->|"UART 橋接(Firmata)"| A["🎛️ ATmega32U4"]
+    A --> ADC["📈 A0–A11 類比輸入"]
+    style U fill:#fff3ee,stroke:#ff7043,stroke-width:2px
+    style C fill:#f3eefe,stroke:#7e57c2,stroke-width:2px
+    style S fill:#eef7ff,stroke:#42a5f5,stroke-width:2px
+    style A fill:#ede7f6,stroke:#4527a0,stroke-width:2px
+    </pre>
+  </div>
+  <p class="diagram-caption">整體架構:重運算(AI 判斷)在雲端,輕動作(讀感測器、開關東西)在板子上——各司其職 ⚖️</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+    participant U as 🧑 使用者
+    participant C as 🤖 Claude
+    participant M as 📡 MCP Server
+    participant A as 🎛️ ATmega32U4
+    U->>C: 「客廳現在多亮?」
+    C->>M: atmega_adc_read(channel=2)
+    M->>A: Firmata REPORT_ANALOG
+    A-->>M: ANALOG_MESSAGE(讀值 731)
+    M-->>C: value = 731
+    C-->>U: 「光感讀值 731/1023,大約七成亮,還不用開燈 💡」
+    </pre>
+  </div>
+  <p class="diagram-caption">一句中文變成一次硬體讀取:這就是 MCP 工具在做的事 ✨</p>
+</section>
+
+<!-- ═══════════════ 第 1 類 ═══════════════ -->
+<section id="cat1">
+  <h2>🔥 第 1 類:有動手 DIY 能力,會用烙鐵自製小電路 <span class="tag">#01–#17</span></h2>
+  <div class="cat-intro">
+    <b>👤 你是誰:</b>會焊接、看得懂電路圖,能自己做分壓、放大、驅動這類前端小電路,必要時還敢改 ATmega 韌體。
+    <p>💪 你的優勢:板子的 <b>12 路 ADC + GPIO/PWM/I2C/SPI</b> 配上自製電路,可以做出市面上買不到、或貴到不想買的客製量測與控制裝置——再讓雲端 AI 幫你判讀數據、做決策。</p>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+    B["🔋 待測電池"] --> L["⚡ 自製恆流電子負載<br>MOSFET + 功率電阻"]
+    L --> D["分壓取樣"]
+    D --> A0["A0 類比輸入"]
+    A0 -->|"atmega_adc_read"| S["📡 MCP Server"]
+    S2["gpio_write 啟停負載"] --> L
+    S --> AI["🤖 AI 記錄放電曲線・算容量與內阻"]
+    AI --> R["📊 電池分級報告"]
+    style B fill:#fff3ee,stroke:#ff7043,stroke-width:2px
+    style AI fill:#f3eefe,stroke:#7e57c2,stroke-width:2px
+    </pre>
+  </div>
+  <p class="diagram-caption">代表作示意:#01 舊電池容量測試站——自製電路量,AI 判讀 🔬</p>
+
+  <div class="grid">
+    <article class="card k1">
+      <div class="card-top"><span class="num">#01</span><span class="emoji">🔋📉</span></div>
+      <h4>舊電池容量測試站</h4>
+      <p class="desc">MOSFET+功率電阻+運算放大器自製恆流電子負載:PWM 設定放電電流、ADC 記錄放電曲線,AI 算出實際容量與內阻,把抽屜裡一堆 18650 自動分級——哪顆能用、哪顆該回收一目瞭然。⚠ 過放/過熱保護要做在本地電路(比較器),不能只靠雲端輪詢。</p>
+      <div class="hw">🔧 自製:邏輯位準 MOSFET、水泥電阻、運放恆流板、電池座、散熱片</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="chip">pwm_configure</span><span class="chip">gpio_write</span><span class="stars">★★★★<span class="off">☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#02</span><span class="emoji">🛵🔋</span></div>
+      <h4>機車電瓶健檢儀</h4>
+      <p class="desc">兩顆電阻分壓把 12V 電瓶電壓降進 ADC 量程,AI 長期記錄靜置電壓趨勢,在「催不動」之前就提醒你換電瓶。分壓要以充電電壓 14.5V 為上限設計(如 100k/27k)並加稽納保護。</p>
+      <div class="hw">🔧 自製:精密分壓電阻+稽納保護、電瓶夾線</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="stars">★<span class="off">☆☆☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#03</span><span class="emoji">🔥⚖️</span></div>
+      <h4>瓦斯桶剩量秤</h4>
+      <p class="desc">四顆荷重元組成惠斯登電橋做秤台,mV 級訊號經自焊儀表放大器進 ADC。AI 記錄重量曲線、依你家用氣速度推算剩幾天、提前提醒叫瓦斯——不用再搖桶用猜的,也不會洗澡洗到一半沒瓦斯。</p>
+      <div class="hw">🔧 自製:荷重元×4、INA125/AD623 儀表放大板、秤台</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#04</span><span class="emoji">⚡📊</span></div>
+      <h4>全屋用電 AI 教練</h4>
+      <p class="desc">SCT-013 開口式比流器夾電箱火線(免斷線),自焊整流濾波板把電流波形變成慢變化直流進 ADC。AI 記錄全天用電曲線、指認冷氣熱水器等吃電大戶時段,對照台電夏季電價給具體省電建議(趨勢分析,非精確電表)。</p>
+      <div class="hw">🔧 自製:SCT-013 比流器、負擔電阻、精密整流+RC 濾波板</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#05</span><span class="emoji">🔌🔥</span></div>
+      <h4>配電箱過熱預警</h4>
+      <p class="desc">多顆 NTC 分壓貼在總開關與各分路斷路器外殼(絕緣、不碰帶電部位),AI 為每一路建立「負載 vs 溫度」基線——同樣用電下越來越熱,就是接點鬆動或線材老化的走火前兆。輔助預警,不取代正規電檢。</p>
+      <div class="hw">🔧 自製:NTC 10kΩ ×4–8、分壓電阻、耐熱膠帶與絕緣套管</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#06</span><span class="emoji">🫖⚡</span></div>
+      <h4>熱水瓶深夜斷電管家</h4>
+      <p class="desc">繼電器控制插座、ACS712 電流感測確認實際有無加熱(輸出需分壓)。AI 學習全家用水時段:深夜自動斷電、起床前 20 分鐘先煮好,電費有感下降。⚠ 110V 施工需配線經驗並加保險絲。</p>
+      <div class="hw">🔧 自製:10A 光耦繼電器、ACS712(輸出分壓到 3.3V)、插座盒+保險絲</div>
+      <div class="toolrow"><span class="chip">gpio_write</span><span class="chip">atmega_adc_read</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#07</span><span class="emoji">❄️🌡️</span></div>
+      <h4>冷氣效率體檢儀</h4>
+      <p class="desc">兩顆 NTC 分別貼冷氣進、出風口,AI 長期記錄運轉溫差——溫差逐月縮小就是濾網髒或冷媒不足,在電費暴增前提醒保養,還能量化「洗完濾網後溫差回升多少」。不到一百元的零件。</p>
+      <div class="hw">🔧 自製:NTC 10kΩ ×2、分壓電阻、延長訊號線</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#08</span><span class="emoji">🌀🔥</span></div>
+      <h4>老電扇改 AI 智慧扇</h4>
+      <p class="desc">十幾年的老電扇不用丟:繼電器並接在機械選速鍵上、NTC 測室溫。AI 依室溫和時段切檔——睡著後自動降微風、清晨轉涼自動關,還聽得懂「有點熱,強一點」。⚠ 選速繞組必須互鎖,任一時刻只允許一檔導通、切檔先全斷再通。</p>
+      <div class="hw">🔧 自製:繼電器模組 ×2–3、NTC+分壓,需拆機焊接(110V 注意絕緣)</div>
+      <div class="toolrow"><span class="chip">gpio_write</span><span class="chip">atmega_adc_read</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#09</span><span class="emoji">🚰💧</span></div>
+      <h4>水塔抽水馬達守護</h4>
+      <p class="desc">水壓感測器(選 3.3V 相容款)量水位、小型比流器量馬達電流,各接一路 ADC。AI 比對兩者:「馬達在轉但水位不升」就是空轉、漏水或浮球卡住,立刻通知——避免燒掉馬達,也避免天價水費。</p>
+      <div class="hw">🔧 自製:水壓感測器或自製水位探針、小型 CT+整流濾波板</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="chip">gpio_write</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#10</span><span class="emoji">🌧️🏠</span></div>
+      <h4>頂樓漏水偵測陣列</h4>
+      <p class="desc">萬用板+鍍錫線自製交錯電極探針條,貼在天花板角落、窗框下緣、冷氣排水盤,最多接滿 12 路類比輸入;GPIO 間歇供電防電蝕。AI 對照降雨時間判讀哪個點開始滲水——在壁癌長出來之前抓到源頭。</p>
+      <div class="hw">🔧 自製:交錯電極探針條 ×N、分壓電阻、小電晶體供電開關</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="chip">gpio_write</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#11</span><span class="emoji">🐠🧪</span></div>
+      <h4>魚缸水質長期監測</h4>
+      <p class="desc">pH 電極經高輸入阻抗運放緩衝(3.3V 下用 TLC272/MCP6002)、EC 探針用 PWM 交流激勵防極化,訊號進 ADS1115 拉高解析度。AI 每小時記錄看趨勢,在 pH 飄移、硝化系統崩潰之前警告換水——不必等魚翻肚才知道出事。</p>
+      <div class="hw">🔧 自製:pH 電極+緩衝板、自製 EC 探針、ADS1115 模組</div>
+      <div class="toolrow"><span class="chip">i2c_read</span><span class="chip">i2c_write</span><span class="chip">pwm_configure</span><span class="stars">★★★★<span class="off">☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#12</span><span class="emoji">📷🌡️</span></div>
+      <h4>相機鏡頭 DIY 防潮箱</h4>
+      <p class="desc">密封收納箱+PTC 加熱片(MOSFET 驅動、獨立 5V 供電)+SHT31 溫濕度計。AI 監控箱內濕度、穩定控制在 45%RH,濕度回穩變慢還會提醒密封條老化——市售電子防潮箱好幾千,這套幾百元搞定。</p>
+      <div class="hw">🔧 自製:密封箱、SHT31 模組、PTC 加熱片、N-MOSFET 驅動</div>
+      <div class="toolrow"><span class="chip">i2c_read</span><span class="chip">gpio_write</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#13</span><span class="emoji">☕📈</span></div>
+      <h4>烘豆溫度曲線儀</h4>
+      <p class="desc">K 型熱電偶經 MAX31855 冷端補償晶片走 SPI 讀回豆溫,AI 即時記錄升溫率(RoR)曲線,烘完自動比對前幾鍋的曲線與你的風味筆記,建議下一鍋火力調整——在家烘豆也能累積職人級數據庫。</p>
+      <div class="hw">🔧 自製:K 型熱電偶探棒、MAX31855 模組(3.3V 相容)、耐熱支架</div>
+      <div class="toolrow"><span class="chip">spi_transfer</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#14</span><span class="emoji">🌍📳</span></div>
+      <h4>陽台簡易地震儀</h4>
+      <p class="desc">壓電片/地音計加自焊放大濾波電路,自訂 ATmega 韌體以 100Hz 連續取樣、觸發後把整段波形送過橋(即時取樣正是 ATmega 側的強項)。AI 比對氣象署地震報告,累積「你家這棟樓實際搖多大」的紀錄——體感級、非科學級,定位誠實。</p>
+      <div class="hw">🔧 自製:壓電片或 geophone、放大濾波板,需自訂 ATmega 韌體</div>
+      <div class="toolrow"><span class="chip">atmega_bridge_raw</span><span class="stars">★★★★<span class="off">☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#15</span><span class="emoji">🌈🏮</span></div>
+      <h4>WS2812 天氣空品燈條</h4>
+      <p class="desc">WS2812 時序太嚴格,Linux 側 GPIO 帶不動——正好發揮 Duo 架構:ATmega 自訂韌體管精準時序,MT7688 把顏色指令送過橋。AI 每小時抓 PM2.5、降雨機率、UV,玄關燈條變成出門儀表板:紅色別騎車、藍色帶傘。</p>
+      <div class="hw">🔧 自製:WS2812 燈條、74HCT125 電平轉換、5V 電源,需自訂 ATmega 韌體</div>
+      <div class="toolrow"><span class="chip">atmega_bridge_raw</span><span class="stars">★★★★<span class="off">☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#16</span><span class="emoji">🏮🙏</span></div>
+      <h4>神明燈智慧調光</h4>
+      <p class="desc">LED 神明燈改 MOSFET+PWM 調光,AI 按農曆排程:初一十五和節日全亮、平日深夜降到微亮省電。「燈不能熄」變成可遠端查證的事——但 pwm_read 只能回讀設定,要證明燈真的亮著,要再加一路光敏電阻回讀。</p>
+      <div class="hw">🔧 自製:LED 燈芯、N-MOSFET 調光電路;選配光敏電阻回讀</div>
+      <div class="toolrow"><span class="chip">pwm_configure</span><span class="chip">pwm_read</span><span class="chip">atmega_adc_read</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k1">
+      <div class="card-top"><span class="num">#17</span><span class="emoji">🚪🔓</span></div>
+      <h4>遠端電控鎖開門</h4>
+      <p class="desc">鐵門加裝 12V 電控鎖,繼電器瞬時導通開鎖、磁簧開關回報門開關狀態。家人忘帶鑰匙時,與 AI 確認身分後遠端開門並自動留下紀錄。⚠ 想清楚斷電/斷網的失效模式(斷電開還是斷電鎖),並驗證開機瞬間 GPIO 不會誤觸發。</p>
+      <div class="hw">🔧 自製:12V 電控鎖、繼電器(加飛輪二極體)、磁簧門磁、12V 電源</div>
+      <div class="toolrow"><span class="chip">gpio_write</span><span class="chip">gpio_read</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+  </div>
+</section>
+
+<!-- ═══════════════ 第 2 類 ═══════════════ -->
+<section id="cat2">
+  <h2>🧩 第 2 類:有 DIY 能力,但只買現成模組來接線 <span class="tag">#18–#34</span></h2>
+  <div class="cat-intro">
+    <b>👤 你是誰:</b>不碰烙鐵(頂多焊個排針),用杜邦線把網拍上幾十塊的現成模組接上板子。
+    <p>💪 你的優勢:便宜模組(溫濕度、繼電器、人體感應⋯⋯)+ <b>AI 的判斷力</b>,做出比原廠 app 聰明得多的自動化——AI 會看天氣、看歷史數據、聽得懂你的中文指令。</p>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+    Soil["🌱 土壤濕度模組<br>插在盆栽裡"] --> A0["A0 類比輸入"]
+    A0 -->|"atmega_adc_read"| AI["🤖 AI 判斷"]
+    W["⛅ 氣象預報 API"] --> AI
+    AI -->|"gpio_write"| Relay["🔀 繼電器模組"]
+    Relay --> Pump["🚿 小水泵"]
+    Pump --> Plant["🪴 盆栽喝水"]
+    style Soil fill:#effaf0,stroke:#66bb6a,stroke-width:2px
+    style AI fill:#f3eefe,stroke:#7e57c2,stroke-width:2px
+    </pre>
+  </div>
+  <p class="diagram-caption">代表作示意:#18 陽台盆栽自動澆水——明天要下雨就先不澆 🌦️</p>
+
+  <div class="grid">
+    <article class="card k2">
+      <div class="card-top"><span class="num">#18</span><span class="emoji">🪴💧</span></div>
+      <h4>陽台盆栽自動澆水</h4>
+      <p class="desc">電容式土壤濕度感測器接 A0,AI 追蹤濕度趨勢、對照氣象預報,乾了才用繼電器開沉水泵——明天會下雨就先不澆。出國一週盆栽不會渴死,平常還能問「我的九層塔今天喝水了嗎」。</p>
+      <div class="hw">🛒 模組:電容式土壤濕度感測器、3.3V 繼電器模組、5V 沉水泵(獨立供電)</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="chip">gpio_write</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#19</span><span class="emoji">💧🏠</span></div>
+      <h4>回南天除濕管家</h4>
+      <p class="desc">BME280 貼在衣櫃或和室,濕度破 70% 就用繼電器開除濕機插座、降回目標自動關,還提醒倒水箱。量的是衣櫃裡、不是機器旁;整年濕度紀錄讓你知道哪間房最會發霉。⚠ 繼電器選 10A 以上、插座端斷電施工。</p>
+      <div class="hw">🛒 模組:BME280(I2C 直連)、10A 繼電器模組(3.3V 可觸發)</div>
+      <div class="toolrow"><span class="chip">i2c_read</span><span class="chip">i2c_write</span><span class="chip">gpio_write</span><span class="stars">★<span class="off">☆☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#20</span><span class="emoji">🔥🚨</span></div>
+      <h4>瓦斯 CO 雙氣警報</h4>
+      <p class="desc">MQ-2(瓦斯)+MQ-7(CO)類比輸出分壓後接 ADC,AI 看「趨勢」而非單點,分辨炒菜油煙與真正外洩,異常時蜂鳴+推播+中文語音警報。⚠ 定位為輔助,不可取代通過認證的市售 CO 警報器。</p>
+      <div class="hw">🛒 模組:MQ-2、MQ-7(5V 供電、輸出分壓到 3.3V)、蜂鳴器;選配 WM8960+喇叭</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="chip">gpio_write</span><span class="chip">i2s_play</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#21</span><span class="emoji">🕯️🙏</span></div>
+      <h4>香燭火安守望者</h4>
+      <p class="desc">IR 火焰感測對準神明桌供桌、MQ-2 讀煙霧濃度,AI 分辨「正常燒香的小火光」和「火焰變大、煙霧飆升」,異常立即蜂鳴+推播。出門拜拜香還沒熄也安心——AI 替你盯著。輔助監看,不取代法規住警器。</p>
+      <div class="hw">🛒 模組:IR 火焰感測(3.3V 供電)、MQ-2(輸出分壓)、蜂鳴器</div>
+      <div class="toolrow"><span class="chip">gpio_read</span><span class="chip">atmega_adc_read</span><span class="chip">gpio_write</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#22</span><span class="emoji">🚪🛡️</span></div>
+      <h4>門窗磁簧警戒網</h4>
+      <p class="desc">MC-38 磁簧貼大門、後陽台和常開的窗,加一顆 PIR 人體感應。AI 依情境判斷:深夜開窗立刻推播、小孩下午開門回家不吵你、出門忘關窗會提醒——比市售保全便宜一個數量級,規則用講的就能改。</p>
+      <div class="hw">🛒 模組:MC-38 磁簧 ×N(GPIO 端加 10K 上拉)、HC-SR501 PIR</div>
+      <div class="toolrow"><span class="chip">gpio_read</span><span class="chip">gpio_set_direction</span><span class="stars">★<span class="off">☆☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#23</span><span class="emoji">👵💗</span></div>
+      <h4>獨居長輩守護網</h4>
+      <p class="desc">不裝攝影機、不收音,只在冰箱門、浴室門、藥盒貼磁簧+PIR。AI 學習長輩的日常節奏:「早上十點冰箱還沒開過」「進浴室 40 分鐘沒出來」才通知家人——隱私壓力遠低於監視器,警訊卻真正有意義。</p>
+      <div class="hw">🛒 模組:HC-SR501 ×2–3、MC-38 磁簧開關 ×N</div>
+      <div class="toolrow"><span class="chip">gpio_read</span><span class="chip">gpio_set_direction</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#24</span><span class="emoji">💦🚿</span></div>
+      <h4>漏水早期警報器</h4>
+      <p class="desc">漏水感測板平放在熱水器下、洗衣機旁、冷氣排水口、浴室門檻,一碰到水立刻推播並講明是哪個點。GPIO 供電、量測時才上電,可防電極腐蝕——樓下鄰居來按門鈴之前,你已經知道了。</p>
+      <div class="hw">🛒 模組:YL-83 感測板或漏水感測繩 ×N</div>
+      <div class="toolrow"><span class="chip">gpio_read</span><span class="chip">atmega_adc_read</span><span class="chip">gpio_write</span><span class="stars">★<span class="off">☆☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#25</span><span class="emoji">⚡🔍</span></div>
+      <h4>冷氣電費照妖鏡</h4>
+      <p class="desc">PZEM-004T 電力計+開口 CT 夾夾冷氣專線(免剪線),AI 走 UART 讀功率與累積度數,套台電時間電價每天告訴你「昨天冷氣花幾元」;耗電曲線異常還能揪出濾網髒、冷媒不足。⚠ 電壓端接市電務必斷電施工;TTL 需 3.3V 電平轉換。</p>
+      <div class="hw">🛒 模組:PZEM-004T v3+100A CT 夾、3.3V 電平轉換小板</div>
+      <div class="toolrow"><span class="chip">uart_transact</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#26</span><span class="emoji">🌫️🍃</span></div>
+      <h4>室內空品管家</h4>
+      <p class="desc">PMS5003 雷射 PM2.5(接板上唯一空閒 UART)+SGP30 量 TVOC,AI 綜合室內數值與環境部空品資料決定「開清淨機還是開窗」——它知道外面紫爆,不會建議你開窗。炒菜後自動加強、回穩自動關。</p>
+      <div class="hw">🛒 模組:PMS5003(5V 供電、UART 3.3V 可直連)、SGP30(I2C)、繼電器</div>
+      <div class="toolrow"><span class="chip">uart_transact</span><span class="chip">i2c_read</span><span class="chip">gpio_write</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#27</span><span class="emoji">🌧️👕</span></div>
+      <h4>陽台收衣雨哨兵</h4>
+      <p class="desc">雨滴感測板伸出屋簷外、BH1750 量日照,開始飄雨的第一時間推播「快收衣服」——比氣象 app 準,因為量的是你家陽台。還能回答「今天適不適合曬棉被」。感測板用 GPIO 間歇供電延長壽命。</p>
+      <div class="hw">🛒 模組:YL-83 雨滴模組、BH1750(I2C);選配 SG90 拉遮雨簾</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="chip">i2c_read</span><span class="chip">pwm_configure</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#28</span><span class="emoji">🐠🏥</span></div>
+      <h4>魚缸水族管家</h4>
+      <p class="desc">NTC 防水探頭測水溫、XKC-Y25 貼缸壁測水位,繼電器控加溫棒與打氣機,PWM 調 LED 模擬日出日落。AI 最重要的工作是保命:加溫棒卡死「煮魚」之前斷電推播。⚠ 加溫棒本身保留機械溫控當第二道保險。</p>
+      <div class="hw">🛒 模組:防水 NTC+分壓、XKC-Y25(3.3V 輸出版)、繼電器 ×2、LED 燈條+MOSFET</div>
+      <div class="toolrow"><span class="chip">atmega_adc_read</span><span class="chip">gpio_write</span><span class="chip">pwm_configure</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#29</span><span class="emoji">🌱💡</span></div>
+      <h4>植物補光小管家</h4>
+      <p class="desc">BH1750 量盆栽實際受光量,AI 統計每日累積光照,不足才用 PWM 經 MOSFET 調亮植物燈補到剛好——只在需要的時段開、依日照自動調光,比插座定時器省電,又治室內多肉徒長。</p>
+      <div class="hw">🛒 模組:BH1750(I2C)、D4184 MOSFET 模組、12V LED 植物燈+變壓器</div>
+      <div class="toolrow"><span class="chip">i2c_read</span><span class="chip">pwm_configure</span><span class="chip">pwm_set_enabled</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#30</span><span class="emoji">🍚🐕</span></div>
+      <h4>貓狗定量餵食器</h4>
+      <p class="desc">SG90 伺服控制飼料閘門,PWM 控開門角度與秒數調份量,紅外線感測確認飼料真的落下、卡料自動重試並通知。AI 依體重目標和剩食狀況逐餐微調,出遠門也能遠端手動加餐。</p>
+      <div class="hw">🛒 模組:SG90(獨立 5V 供電)、紅外線障礙感測(3.3V 供電)、飼料桶+閘門</div>
+      <div class="toolrow"><span class="chip">pwm_configure</span><span class="chip">pwm_set_enabled</span><span class="chip">gpio_read</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#31</span><span class="emoji">🏷️🐈</span></div>
+      <h4>RFID 專屬餵食站</h4>
+      <p class="desc">MFRC522 讀貓項圈上的 MIFARE 標籤,AI 辨識是哪隻貓靠近,只為吃處方飼料或減肥中的那隻開閘,並記錄每隻進食次數——多貓搶食、偷吃一次解決。讀距僅 3–5cm,讓貓停留蹭近讀卡器的機構設計是成敗關鍵。</p>
+      <div class="hw">🛒 模組:MFRC522(SPI、3.3V 原生)、MIFARE 鈕扣標籤、SG90+閘門</div>
+      <div class="toolrow"><span class="chip">spi_transfer</span><span class="chip">pwm_configure</span><span class="stars">★★★★<span class="off">☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#32</span><span class="emoji">🐱📊</span></div>
+      <h4>貓砂盆健康日誌</h4>
+      <p class="desc">US-100 超音波(UART 模式)對準貓砂盆入口,AI 定時測距記錄每次如廁時間與停留長度。頻繁進出或停留異常=泌尿道警訊該看獸醫——貓奴最容易錯過的早期症狀,市售貓砂盆做不到的長期趨勢分析。</p>
+      <div class="hw">🛒 模組:US-100 超音波測距(UART 模式、3.3V)</div>
+      <div class="toolrow"><span class="chip">uart_transact</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#33</span><span class="emoji">🐱🔴</span></div>
+      <h4>雷射逗貓雲台</h4>
+      <p class="desc">兩顆 SG90 組成二軸雲台(剛好用滿板上僅有的 2 路 PWM),雷射頭經電晶體開關。上班時說「陪貓玩十分鐘」,AI 生成像獵物的隨機軌跡遠端逗貓,還會避開固定路線免得貓玩膩。⚠ 用低功率雷射並避免直射貓與人眼。</p>
+      <div class="hw">🛒 模組:SG90 ×2+雲台支架、雷射模組+電晶體開關、獨立 5V 供電</div>
+      <div class="toolrow"><span class="chip">pwm_configure</span><span class="chip">pwm_set_enabled</span><span class="chip">gpio_write</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k2">
+      <div class="card-top"><span class="num">#34</span><span class="emoji">🍅⏱️</span></div>
+      <h4>桌面番茄鐘打卡機</h4>
+      <p class="desc">街機大按鈕按下開始 25 分鐘專注,OLED 每分鐘更新剩餘時間,蜂鳴器收尾。計時邏輯在 AI 端,所以它同時是專注教練:記錄每日番茄數、發現你總在週三下午破功,主動建議換時段做深度工作。</p>
+      <div class="hw">🛒 模組:街機大按鈕、SSD1306 OLED(I2C)、無源蜂鳴器</div>
+      <div class="toolrow"><span class="chip">gpio_read</span><span class="chip">i2c_write</span><span class="chip">pwm_configure</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+  </div>
+</section>
+
+<!-- ═══════════════ 第 3 類 ═══════════════ -->
+<section id="cat3">
+  <h2>☁️ 第 3 類:完全不動手,只想要省電的常駐網路小主機 <span class="tag">#35–#50</span></h2>
+  <div class="cat-intro">
+    <b>👤 你是誰:</b>不接線、不碰針腳。板子插上電、連上 WiFi 就好;最多插個 USB 隨身碟、USB 音效卡或喇叭。
+    <p>💪 你的優勢:一台 <b>1W 功耗、24 小時不關機</b> 的 Linux 小主機(還有 116GB SD 卡)——電費一年不到百元,卻能扛起音樂播放、網路服務、排程任務、AI 助理的家。</p>
+  </div>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+    NET["🌐 網路電台・Podcast"] --> Board["📡 7688 Duo<br>1W 常駐小主機"]
+    SD["💾 116GB SD 音樂庫"] --> Board
+    CRON["⏰ 排程鬧鐘 / 🤖 AI 指令"] --> Board
+    Board --> DAC["🎧 USB 音效卡"]
+    DAC --> SPK["🔊 喇叭"]
+    style Board fill:#eef7ff,stroke:#42a5f5,stroke-width:2px
+    style SPK fill:#effaf0,stroke:#66bb6a,stroke-width:2px
+    </pre>
+  </div>
+  <p class="diagram-caption">代表作示意:#35 全家點歌音樂盒——插電、插喇叭,就是一台不關機的音響 🎶</p>
+
+  <div class="grid">
+    <article class="card k3">
+      <div class="card-top"><span class="num">#35</span><span class="emoji">🎶📻</span></div>
+      <h4>全家點歌音樂盒</h4>
+      <p class="desc">116GB SD 卡放全家的音樂收藏,板子跑 MPD+輕量網頁介面,家人用手機瀏覽器點歌、客廳 USB 喇叭出聲。AI 整理雜亂標籤、依情境建歌單(晚餐、打掃、讀書),還能用講的點播「放點輕鬆的爵士」。</p>
+      <div class="hw">🔌 需要:USB 喇叭/音效卡(隨插即用,舊 kernel 建議選 USB Audio Class 1.0 裝置)</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#36</span><span class="emoji">📻⏰</span></div>
+      <h4>網路電台晨喚鬧鐘</h4>
+      <p class="desc">每天準時播 ICRT、警廣等網路電台當鬧鐘,音量漸進放大,比手機鬧鈴溫和。AI 管排程:週末晚半小時、國定假日自動跳過,用講的就能改——而且鬧鐘永遠不會因為手機沒電而失效。</p>
+      <div class="hw">🔌 需要:USB 喇叭(需確認驅動);串流解碼建議用 madplay 這類定點解碼器</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★<span class="off">☆☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#37</span><span class="emoji">😴🌧️</span></div>
+      <h4>睡眠白噪音定時機</h4>
+      <p class="desc">睡前自動播放 SD 卡裡的雨聲、電扇聲,到設定時間音量淡出後停止——不像手機 App 會被通知打斷或整夜耗電。AI 依你隔天回報的睡眠狀況調整音檔與時長。全機無風扇零噪音,放床頭不干擾。</p>
+      <div class="hw">🔌 需要:USB 喇叭(需確認驅動);音檔存內建 SD 卡</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★<span class="off">☆☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#38</span><span class="emoji">🎧🌙</span></div>
+      <h4>Podcast 夜間下載站</h4>
+      <p class="desc">每晚離峰時段自動檢查訂閱的 Podcast RSS,新集數直接下載進 SD 卡;早上出門前手機連家用 WiFi 幾秒抓完,通勤路上聽不吃行動網路流量。AI 管訂閱退訂、自動清掉聽完的舊集數,SD 卡永遠不會爆。</p>
+      <div class="hw">🔌 需要:不用(檔案存內建 116GB SD 卡)</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#39</span><span class="emoji">🗑️🔊</span></div>
+      <h4>垃圾車語音提醒站</h4>
+      <p class="desc">照你那一里的垃圾車班表,到站前 10 分鐘用喇叭播提醒語音(雲端 TTS 產生、板子只負責播放),同時發手機推播;國定假日停收自動跳過——再也不用聽到少女的祈禱才手忙腳亂綁垃圾袋。</p>
+      <div class="hw">🔌 需要:USB 喇叭(需確認驅動)</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#40</span><span class="emoji">📢🏠</span></div>
+      <h4>客廳遠端廣播站</h4>
+      <p class="desc">家人在 Telegram 群組打「/廣播 吃飯了」,板子把文字經雲端 TTS 轉成語音、立刻從客廳喇叭念出來——人在公司也能「喊」小孩下樓吃飯。還能設延時廣播:「十分鐘後提醒關瓦斯」。</p>
+      <div class="hw">🔌 需要:USB 喇叭(需確認驅動)</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#41</span><span class="emoji">💊🔔</span></div>
+      <h4>長輩吃藥提醒機</h4>
+      <p class="desc">放在長輩家,固定時段播放子女用手機預錄的聲音:「媽,吃血壓藥囉」。子女在外地用 Telegram 就能遠端新增「明天早上九點回診」等提醒,AI 排進播放排程。無風扇、零操作,長輩完全不用學任何東西。</p>
+      <div class="hw">🔌 需要:USB 喇叭(需確認驅動);音檔手機預錄後上傳 SD 卡</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#42</span><span class="emoji">📱💾</span></div>
+      <h4>手機照片深夜備份站</h4>
+      <p class="desc">架 rsync/SFTP 服務(Samba 對 128MB RAM 偏重),全家手機連上家用 WiFi 後每晚自動把照片備份進 116GB SD 卡,不用再繳雲端相簿月費。AI 定期檢查備份成功、找出重複檔案、回報剩餘空間。</p>
+      <div class="hw">🔌 需要:不用(可加 USB 隨身碟做第二份備份)</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#43</span><span class="emoji">🚫🌐</span></div>
+      <h4>全家擋廣告 DNS</h4>
+      <p class="desc">dnsmasq+公開廣告網域清單,板子當全家的 DNS——手機、平板、電視盒的廣告與追蹤網域在解析階段就被擋掉(128MB RAM 跑 dnsmasq 剛好,清單規模要節制)。AI 排程更新清單,「某網站打不開」時幫你診斷誤擋、快速加白名單。</p>
+      <div class="hw">🔌 需要:不用</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#44</span><span class="emoji">🕵️📶</span></div>
+      <h4>家用網路斷線偵探</h4>
+      <p class="desc">每分鐘 ping 常用站點,把延遲、丟包、斷線時段全記錄在 SD 卡,恢復連線立刻通知。向 HiNet 客服反映「我家網路常斷」時,AI 直接讀 log 整理出精確到秒的斷線時間表當談判證據。</p>
+      <div class="hw">🔌 需要:不用</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#45</span><span class="emoji">🏠📶</span></div>
+      <h4>誰在家偵測器</h4>
+      <p class="desc">定期掃描家用網路的 ARP 表:小孩手機一連上 WiFi 就推播「放學到家了」;半夜出現陌生裝置就警報「疑似有人蹭網」。AI 把一堆看不懂的 MAC 位址整理成「爸的手機」「客廳電視」這種人話。⚠ 家人手機需對家用 WiFi 關閉隨機 MAC。</p>
+      <div class="hw">🔌 需要:不用</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#46</span><span class="emoji">🔑🖥️</span></div>
+      <h4>遠端喚醒跳板機</h4>
+      <p class="desc">常駐跑 DDNS+SSH 跳板:人在外面先連上它,再發 Wake-on-LAN 魔術封包叫醒家裡吃電的桌機或 NAS,用完關機——用 1W 換到「整個家隨時可遠端」,還能直接叫 AI「幫我開家裡電腦」。⚠ 需真實公網 IP(CGNAT 不可行)+路由器 port forwarding。</p>
+      <div class="hw">🔌 需要:不用</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#47</span><span class="emoji">👀🔔</span></div>
+      <h4>網頁變動哨兵</h4>
+      <p class="desc">給它一串網址——演唱會售票頁、公家機關公告、缺貨商品頁——排程抓取比對,一有變動立刻推播;「這個變動重不重要」丟給雲端 AI 過濾,免得被無關緊要的改版轟炸。重 JS 頁面只能抓靜態 HTML/API,要逐一確認。</p>
+      <div class="hw">🔌 需要:不用</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#48</span><span class="emoji">⛽💱</span></div>
+      <h4>油價匯率週報機器人</h4>
+      <p class="desc">每週日爬中油油價公告、每天爬台銀牌告匯率,漲跌破你設的門檻就通知:「明天油價漲六角,今晚先去加油」「日圓又破底,可以換了」。爬蟲由 AI 寫好,網站改版抓不到資料時再叫 AI 進來修。</p>
+      <div class="hw">🔌 需要:不用</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★<span class="off">☆☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#49</span><span class="emoji">📰☀️</span></div>
+      <h4>PTT 晨報摘要員</h4>
+      <p class="desc">每天清晨爬你追的 PTT 看板和新聞 RSS,原文轉送雲端 AI 濃縮成一封五分鐘讀完的晨報,寄到 Email 或 Telegram。板子只做爬取轉送、摘要交給雲端——「便宜常駐小主機+雲端大腦」分工的典型示範。</p>
+      <div class="hw">🔌 需要:不用</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+    <article class="card k3">
+      <div class="card-top"><span class="num">#50</span><span class="emoji">🌤️📊</span></div>
+      <h4>天氣空品儀表板</h4>
+      <p class="desc">定時抓中央氣象署與環境部開放資料存進 SD 卡上的 SQLite,跑輕量網頁儀表板讓全家手機隨時看。AI 每天早上判讀:「午後對流雨機率高記得帶傘」「AQI 橘色,今天別去河濱跑步」;資料累積久了還能分析你家那區的季節趨勢。</p>
+      <div class="hw">🔌 需要:不用(資料存內建 SD 卡)</div>
+      <div class="toolrow"><span class="chip none">純軟體・免接線</span><span class="stars">★★★<span class="off">☆☆</span></span></div>
+    </article>
+  </div>
+</section>
+
+<footer>
+  <p>💡 所有點子都以本專案實際驗證過的能力為基礎(13 個 MCP 工具、ATmega ADC 橋接、I2S 播放),並經過逐條可行性審查——卡片上的 ⚠ 就是審查時抓出來的關鍵前提。</p>
+  <p>⚠️ 小提醒:本板 I2S <b>錄音</b>功能因驅動 bug 確定不可用——需要收音的應用請改用 USB 音效卡(未驗證)。涉及 110V 市電的施工請找有經驗的人或水電師傅。架構圖需要網路載入 mermaid 才會顯示。</p>
+  <p style="margin-top:10px">Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)・Made with <span class="heart">❤</span> in Tainan</p>
+</footer>
+
+</div>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: {
+    primaryColor: '#fff8e8', primaryBorderColor: '#ffb300', primaryTextColor: '#2d3142',
+    lineColor: '#8d93ab', fontSize: '15px'
+  }});
+</script>
+</body>
+</html>

@@ -20,7 +20,8 @@ audio, and (via a second onboard processor) analog input.
 
 | Path | What it is |
 |---|---|
-| [`dev-notes.html`](dev-notes.html) | Narrative write-up: moving the root filesystem from 9.8 MB of internal flash onto a 116 GiB SD card, getting a modern Python running on 2016 firmware, and an unresolved SIGILL/SIGSEGV bug in SD-resident dynamically-linked binaries |
+| [`dev-notes.html`](dev-notes.html) | Narrative write-up of the whole bring-up: SD-card extroot, modern Python on 2016 firmware (with an unresolved SIGILL/SIGSEGV bug in SD-resident dynamically-linked binaries), a network bridge loop, and the traps hit while building the MCP server and waking the ATmega32U4 |
+| [`applications.html`](applications.html) | An illustrated brainstorm (in Chinese): 50 real-life applications for this board + MCP server, organized by DIY skill level — from solder-your-own-circuits, through wire-up-store-bought-modules, to zero-wiring always-on network services — each idea feasibility-checked against the board's real constraints |
 | [`provisioning/`](provisioning/) | Every shell script actually run against the board, kept in the order it was run so the work is reproducible on a fresh board rather than rediscovered. See [`provisioning/README.md`](provisioning/README.md) |
 | [`mt7688-mcp-server/`](mt7688-mcp-server/) | The MCP server itself — Go, cross-compiled for the board, exposing 13 hardware-primitive tools (GPIO/I2C/SPI/PWM/UART/I2S/ATmega bridge) an MCP client can call |
 | [`atmega-firmware/`](atmega-firmware/) | Arduino firmware for the board's second processor (ATmega32U4) — `adc-bridge/` speaks a Firmata subset over the inter-chip UART so the MT7688 side can read the ATmega's analog inputs |

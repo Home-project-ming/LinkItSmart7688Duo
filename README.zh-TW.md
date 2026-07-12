@@ -13,7 +13,8 @@
 
 | 路徑 | 內容 |
 |---|---|
-| [`dev-notes.html`](dev-notes.html) | 敘事式筆記:把根檔案系統從 9.8 MB 的內建 flash 搬到 116 GiB 的 SD 卡、在 2016 年的韌體上裝現代 Python、以及一個至今沒解決的 SD 卡上動態連結執行檔 SIGILL/SIGSEGV 問題 |
+| [`dev-notes.html`](dev-notes.html) | 敘事式筆記,涵蓋整段養板子的過程:SD 卡 extroot、在 2016 年的韌體上裝現代 Python(含一個至今沒解決的 SD 卡動態連結執行檔 SIGILL/SIGSEGV 問題)、區網迴圈修復,以及打造 MCP server、喚醒 ATmega32U4 路上踩過的坑 |
+| [`applications.html`](applications.html) | 圖文並茂的腦力激盪:這塊板子 + MCP server 的 50 個實際生活應用,依 DIY 能力分三類(會焊接自製電路/只買現成模組接線/完全不動手的常駐網路服務),每個點子都對照板子的真實限制做過可行性審查 |
 | [`provisioning/`](provisioning/) | 每一個真的在板子上跑過的 shell 腳本,依照實際執行順序保留,讓整個過程在一塊全新的板子上可以重現,不用重新摸索一次。細節見 [`provisioning/README.md`](provisioning/README.md) |
 | [`mt7688-mcp-server/`](mt7688-mcp-server/) | MCP server 本體——用 Go 寫、交叉編譯給板子用,開放 13 個硬體原語工具(GPIO/I2C/SPI/PWM/UART/I2S/ATmega 橋接)給 MCP client 呼叫 |
 | [`atmega-firmware/`](atmega-firmware/) | 板上第二顆處理器(ATmega32U4)用的 Arduino 韌體——`adc-bridge/` 透過晶片間的 UART 講一個 Firmata 子集,讓 MT7688 這側能讀到 ATmega 的類比輸入 |
