@@ -5,10 +5,16 @@ package main
 import "fmt"
 
 var blockedPins = map[int]string{
-	0:  "I2S (i2s pinmux group, WM8960 codec)",
-	1:  "I2S (i2s pinmux group, WM8960 codec)",
-	2:  "I2S (i2s pinmux group, WM8960 codec)",
-	3:  "I2S (i2s pinmux group, WM8960 codec)",
+	0: "I2S (i2s pinmux group, WM8960 codec)",
+	1: "I2S (i2s pinmux group, WM8960 codec)",
+	2: "I2S (i2s pinmux group, WM8960 codec)",
+	// Pin 3 has two independent reasons to stay blocked: it is part of the
+	// i2s pinmux group, and it is ALSO the ATmega32U4's ISP reset line
+	// (the active linuxgpio entry in the board's /etc/avrdude.conf reads
+	// "reset = 3"; corroborated by the vendor Developer's Guide pin-out).
+	// Driving it resets the ATmega mid-operation, which would break the
+	// atmega_adc_read/atmega_bridge_raw tools' firmware underneath them.
+	3:  "I2S (i2s pinmux group) + ATmega ISP reset line (driving it resets the ATmega)",
 	6:  "SPI CS1 (spi_cs1 pinmux group)",
 	7:  "SPI bus (fixed-function pin, no GPIO alternative)",
 	8:  "SPI bus (fixed-function pin, no GPIO alternative)",
@@ -28,7 +34,12 @@ var blockedPins = map[int]string{
 	27: "SDXC/extroot",
 	28: "SDXC/extroot",
 	29: "SDXC/extroot",
-	38: "ATmega ISP reset (held by the core)",
+	// Previously mislabeled "ATmega ISP reset" (that is pin 3, see above).
+	// Live-verified 2026-07-12: /sys/kernel/debug/gpio shows gpio-38 held
+	// by the kernel as input "reset" — the device tree's
+	// gpio-keys-polled/wps node (label "reset", bank1 offset 6 = 38,
+	// linux,code KEY_WPS_BUTTON), i.e. the board's Wi-Fi Reset button.
+	38: "Wi-Fi reset button input (held by the kernel, gpio-keys \"reset\")",
 	45: "UART1 (uart1 pinmux group)",
 	46: "UART1 (uart1 pinmux group)",
 }
