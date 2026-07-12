@@ -296,6 +296,18 @@
       <a href="#loop-stp">為什麼 STP 救不了</a>
     </div>
     <div class="group">
+      <span class="label">MCP server</span>
+      <a href="#mcp-result">結果</a>
+      <a href="#mcp-traps">坑 · Go 與 MCP 協定</a>
+      <a href="#i2s-record">錄音<span class="chip">死巷</span></a>
+    </div>
+    <div class="group">
+      <span class="label">ATmega 橋接</span>
+      <a href="#bridge-result">結果</a>
+      <a href="#bridge-traps">坑 · 喚醒第二顆晶片</a>
+      <a href="#bridge-open">黑名單腳位<span class="chip">未解</span></a>
+    </div>
+    <div class="group">
       <span class="label">附錄</span>
       <a href="#files">檔案與腳本</a>
     </div>
@@ -306,12 +318,13 @@
 <div class="wrap">
 
 <header style="display:flex;flex-direction:column;gap:1rem;">
-  <span class="eyebrow">現場筆記 · 最後更新 2026-07-10</span>
+  <span class="eyebrow">現場筆記 · 最後更新 2026-07-12</span>
   <h1>把一塊 2016 年的 OpenWrt 板子養成能用的開發環境</h1>
   <p style="color:var(--ink-soft);font-size:1.05rem;max-width:38rem;">
-    兩段工作:先把根檔案系統從 9.8 MB 的內建 flash 搬到 128 GB 的 SD 卡,
-    再在上面裝現代 Python。過程中撞到十幾個坑、三個自己製造的假訊號,
-    以及一個到現在還沒解決的硬體層問題。這裡記錄每一個。
+    從把根檔案系統搬上 SD 卡開始:裝現代 Python、修好一個把整個區網打趴的
+    L2 迴圈、寫一個 MCP server 讓 AI 直接操作板上硬體,最後喚醒板上
+    第二顆晶片提供類比輸入。過程中撞到的每一個坑、每一個自己製造的假訊號、
+    每一個還沒解決的問題,都記錄在這裡。
   </p>
 </header>
 
@@ -824,6 +837,202 @@ wifi reload</pre>
 
 <hr class="rule">
 
+<section id="mcp-result">
+  <span class="eyebrow">MCP server</span>
+  <h2>結果 <span class="status ok">已完成</span></h2>
+  <div class="result">
+    <div class="before">
+      <div class="lbl">Before · 手動 SSH 指令</div>
+      <div class="n">0 個工具</div>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="after">
+      <div class="lbl">After · AI 直接呼叫</div>
+      <div class="n">13 個工具</div>
+    </div>
+  </div>
+  <p>
+    用 Go 寫、在 PC 上交叉編譯、<code>scp</code> 到板子上的<strong>單一靜態執行檔</strong>——
+    不需要板上任何直譯器或函式庫,刻意繞開上面 Python 章節那一整類 runtime 問題。
+    MCP client(Claude Code)每個 session 透過 SSH 啟動一次這個執行檔,
+    之後 AI 就能直接呼叫 GPIO 讀寫、I2C、SPI、PWM、UART、I2S 播放,
+    以及透過板上第二顆晶片的類比輸入。
+  </p>
+  <dl class="spec">
+    <div><dt>語言</dt><dd>Go · 靜態連結</dd></div>
+    <div><dt>Target</dt><dd>mipsle · soft-float</dd></div>
+    <div><dt>CGO</dt><dd>關閉</dd></div>
+    <div><dt>工具數</dt><dd>13</dd></div>
+    <div><dt>部署</dt><dd>scp → /usr/local/bin</dd></div>
+    <div><dt>連線</dt><dd>SSH spawn · stdio</dd></div>
+  </dl>
+  <p>
+    每支工具在碰硬體之前都先過一層寫死的 GPIO 黑名單:console UART、SD/extroot
+    控制線、橋接 UART、ISP 燒錄線——擋掉「AI 一個手滑把自己腳下的板子鋸掉」
+    這一整類事故。黑名單擋下的呼叫會回報原因,而不是靜默失敗。
+  </p>
+</section>
+
+<section id="mcp-traps">
+  <h2>坑 · Go 與 MCP 協定之間</h2>
+  <div class="traps">
+
+    <div class="trap">
+      <h3>Go 的 <code>[]byte</code> 在 JSON 裡是字串,不是陣列</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">client 送 [1, 2, 3] 被 schema 驗證拒絕;工具 schema 裡該欄位是 string</dd></div>
+        <div><dt>原因</dt><dd><code>encoding/json</code> 把 <code>[]byte</code> 一律編成 base64 字串,MCP SDK 產生的 schema 也跟著變成 <code>string</code>——跟「位元組陣列」的直覺完全對不上。</dd></div>
+        <div><dt>解法</dt><dd class="fix">所有 raw-byte 欄位改用 <code>[]int</code>(逐一驗證 0–255)。唯一例外是 <code>i2s_play</code> 的音訊 payload:檔案夠大,base64 字串反而遠比 JSON 整數陣列省,留著。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>GPIO export 的併發競爭</h3>
+      <dl>
+        <div><dt>原因</dt><dd>每個 MCP session 是獨立的 OS process,兩個 session 可能同時對同一支還沒 export 的腳位動手。先 <code>stat</code> 再寫是教科書級的 TOCTOU。</dd></div>
+        <div><dt>解法</dt><dd class="fix">不檢查,永遠直接寫 <code>/sys/class/gpio/export</code>,讓核心去序列化:撞到 <code>EBUSY</code> 就代表別人已經 export 完了,視為成功。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>部署了新版,session 還在跟舊 process 講話</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">deploy.ps1 成功,新工具卻沒出現;修掉的 bug 看起來還在</dd></div>
+        <div><dt>原因</dt><dd>MCP client 在 session 開始時 spawn 的舊 process 還活著;換掉磁碟上的執行檔不影響它。</dd></div>
+        <div><dt>解法</dt><dd class="fix">重載/重連 MCP session。先確認這件事,再去懷疑 deploy 失敗。</dd></div>
+      </dl>
+    </div>
+
+  </div>
+</section>
+
+<section id="i2s-record">
+  <h2>⚠ I2S 錄音:確認是死巷,不是還沒做 <span class="status blocked">死巷</span></h2>
+  <p>
+    播放沒問題(<code>i2s_play</code>,WAV,實測呼叫成功)。錄音是另一回事:
+    <code>arecord</code> 一啟動就卡死,而且卡住的 process
+    <strong>連 SIGKILL 都殺不掉</strong>,只能重開機清掉。
+  </p>
+  <div class="callout warn">
+    <h3>該試的都試了</h3>
+    <p>
+      codec(WM8960)的 capture 路徑確認有上電、路由確認正確;之後又試了把 ALSA
+      buffer/period 加大——同樣的卡死,一模一樣的症狀。這是 2016 年驅動層的
+      bug,不是設定問題。官方 100 頁的 Developer's Guide 從頭到尾沒提過錄音;
+      真正的驅動原始碼鎖在一份從沒簽過的 NDA 後面。結論:
+      <strong>這塊板子的錄音就是不可用</strong>,任何「說不定這次會動」的嘗試
+      只會換來一次重開機。完整調查在
+      <code>docs/superpowers/specs/2026-07-11-i2s-design.md</code>。
+    </p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section id="bridge-result">
+  <span class="eyebrow">ATmega 橋接</span>
+  <h2>結果 <span class="status ok">已完成</span></h2>
+  <div class="result">
+    <div class="before">
+      <div class="lbl">Before · MT7688 本身</div>
+      <div class="n">0 路 ADC</div>
+    </div>
+    <div class="arrow" aria-hidden="true">→</div>
+    <div class="after">
+      <div class="lbl">After · 透過第二顆晶片</div>
+      <div class="n">12 路 10-bit</div>
+    </div>
+  </div>
+  <p>
+    MT7688 完全沒有類比輸入,但板上還睡著第二顆晶片:ATmega32U4(Arduino 相容,
+    8 MHz / 3.3V)。四個階段把它接進 MCP:工具鏈打通(交叉編譯 + ISP 燒錄)→
+    選定 Firmata 子集當線上協定 → ATmega 韌體 → MT7688 側 decoder + 兩支新工具
+    (<code>atmega_adc_read</code>、<code>atmega_bridge_raw</code>)。
+    每一階段都在真實硬體上驗證過,包括直接解讀 Firmata 原始位元組的 round-trip。
+  </p>
+  <p>
+    橋接的 UART 在 Linux 側是 <code>/dev/ttyS0</code>——這不是刪去法猜的,是從
+    <code>dmesg</code> 的 pinmux 紀錄(pin 12/13 → <code>uart0</code> →
+    <code>10000c00.uartlite</code> → <code>ttyS0</code>)一路對出來的。板上共三個
+    UART:<code>ttyS0</code> 橋接、<code>ttyS1</code> 給 <code>uart_transact</code>、
+    <code>ttyS2</code> 是 console——搞混任何兩個,東西就是不會動。
+  </p>
+</section>
+
+<section id="bridge-traps">
+  <h2>坑 · 喚醒一顆 2016 年之後沒人理的晶片</h2>
+  <div class="traps">
+
+    <div class="trap dead">
+      <h3>官方 board package 的伺服器已從 DNS 上消失</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">arduino-cli core update-index → labs.mediatek.com 無法解析</dd></div>
+        <div><dt>原因</dt><dd>MediaTek Labs 開發者平台整個關站。官方文件寫的 board-manager URL 永遠不會再通。</dd></div>
+        <div><dt>解法</dt><dd class="fix">從 GitHub 的 <code>linkit-smart-7688-duo-arduino</code> repo(tag <code>0.1.7</code>)手動裝進 arduino-cli 的 packages 目錄;裝之前先逐位元組跟 upstream 比對。步驟固化在 <code>CLAUDE.md</code>。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3><code>LED_BUILTIN</code> 不存在,TXLED 沒有燈</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">LED_BUILTIN 編譯失敗;改 TXLED0/1 編譯過、燒錄過、flash 驗證過——就是不亮</dd></div>
+        <div><dt>原因</dt><dd>這塊板的 <code>pins_arduino.h</code> 沒定義 <code>LED_BUILTIN</code>;TXLED 巨集有定義,但那顆 USB 活動 LED 板子上根本沒焊。</dd></div>
+        <div><dt>解法</dt><dd class="fix">板上真的有一顆 LED,絲印「LED (D13)」——就是普通的 pin <code>13</code>。Developer's Guide 的板照(Fig. 7)與 pin-out 圖(Fig. 10)雙重確認,實機閃燈收工。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>avrdude:AVR device not responding</h3>
+      <dl>
+        <div><dt>原因</dt><dd>ATmega 有<strong>自己獨立的 USB 電源孔</strong>(絲印 "USB Power &amp; MCU USB Port"),不從 MT7688 側取電。沒插它,目標晶片整顆沒電,ISP 當然敲不通。查過的文件全都沒寫,是請人對著實體板檢查才發現的。</dd></div>
+        <div><dt>解法</dt><dd class="fix">插上那個孔。<code>avrdude</code> 隨即讀到真實裝置簽章 <code>0x1e9587</code>。之後再遇到 "not responding",先檢查這條線,再懷疑別的。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>/tmp 是 tmpfs,而且會被悄悄清掉</h3>
+      <dl>
+        <div><dt>症狀</dt><dd class="hit">run-avrdude /tmp/blink.hex → No such file or directory(明明剛 scp 上去)</dd></div>
+        <div><dt>原因</dt><dd>板子的原廠韌體似乎會定期清 <code>/tmp</code>;電源 troubleshooting 拖了幾分鐘,檔案就沒了。</dd></div>
+        <div><dt>解法</dt><dd class="fix">scp 完<strong>立刻</strong>燒錄,兩步之間不要停。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>沒有 checksum 的 UART,得自己防位元翻轉</h3>
+      <dl>
+        <div><dt>原因</dt><dd>Firmata 把 14-bit 數值拆成兩個 7-bit 資料位元組傳,線上沒有任何 checksum。decoder 若不遮罩,一個翻轉的 bit 7 就能變出超出 0–1023 的假讀值。</dd></div>
+        <div><dt>解法</dt><dd class="fix">decode 前一律 <code>&amp; 0x7F</code>,附迴歸測試。code review 抓到的。</dd></div>
+      </dl>
+    </div>
+
+    <div class="trap">
+      <h3>成功路徑上被靜默吞掉的錯誤 <span class="tag">code review 抓到</span></h3>
+      <dl>
+        <div><dt>原因</dt><dd><code>atmega_adc_read</code> 讀到值之後要把 <code>REPORT_ANALOG</code> 關掉;舊版在這一步失敗時直接回傳 <code>(value, nil)</code>——通道卡在啟用狀態,呼叫端毫無跡象,下一次呼叫才莫名其妙。</dd></div>
+        <div><dt>解法</dt><dd class="fix">重排尾端邏輯:關閉失敗一定浮出錯誤(訊息帶上已讀到的值);逾時錯誤永遠優先於後續的關閉失敗。</dd></div>
+      </dl>
+    </div>
+
+  </div>
+</section>
+
+<section id="bridge-open">
+  <h2>未解 · 黑名單裡記錯腳位的「ISP reset」 <span class="status partial">已標記</span></h2>
+  <div class="callout warn">
+    <h3>證據指向 pin 3,黑名單寫的是 pin 38</h3>
+    <p>
+      板上的 <code>/etc/avrdude.conf</code> 和 Developer's Guide 的 pin-out 圖都說
+      ISP reset 線是 GPIO <strong>3</strong>;黑名單裡標「ATmega ISP reset」的卻是
+      pin <strong>38</strong>。pin 3 目前恰好因為 I2S(0–3 整段)被擋住,實務上安全——
+      但擋它的理由文字隻字未提 ISP。哪天有人覺得「我不用音訊,pin 3 解鎖沒差」,
+      就會在韌體運作中把 ATmega 重置。已標記在 <code>CLAUDE.md</code>,還沒修。
+    </p>
+  </div>
+</section>
+
+<hr class="rule">
+
 <section id="files">
   <span class="eyebrow">附錄</span>
   <h2>檔案與腳本</h2>
@@ -837,6 +1046,10 @@ wifi reload</pre>
         <tr><td><code>02-python-entware/</code></td><td>7 個腳本,含審查過的 Entware installer</td></tr>
         <tr><td><code>03-diagnostics/</code></td><td>11 個腳本,SIGILL 調查的完整軌跡(含<strong>那個寫壞的測試</strong>,保留作為教訓)</td></tr>
         <tr><td><code>04-network-loop/</code></td><td>3 個腳本:開 STP(沒用,但留著無害)、輪詢 STP port state、真正的修復(把 apcli0 從 wireless 設定改掛到 wan)</td></tr>
+        <tr><td><code>mt7688-mcp-server/</code></td><td>MCP server 本體(Go)。<code>go test ./...</code> → <code>build.ps1</code> → <code>deploy.ps1</code></td></tr>
+        <tr><td><code>atmega-firmware/adc-bridge/</code></td><td>ATmega 側的 Firmata ADC 韌體(Arduino)</td></tr>
+        <tr><td><code>docs/superpowers/</code></td><td>specs 與 plans:每個階段的設計文件與逐任務計畫,含各階段的 live 驗證紀錄</td></tr>
+        <tr><td><code>.claude/skills/mt7688-hardware/</code></td><td>給 AI agent 的工具使用 skill:何時用哪支工具、安全限制、schema 看不出來的眉角</td></tr>
       </tbody>
     </table>
   </div>
@@ -848,7 +1061,7 @@ $env:BOARD_PASSWORD = '&lt;password&gt;'
 <footer>
   LinkIt Smart 7688 Duo · MT7688AN + ATmega32U4<br>
   OpenWrt Chaos Calmer 15.05.1 (r49203) · kernel 3.18.23 · mipsel soft-float<br>
-  最後更新 2026-07-10
+  最後更新 2026-07-12
 </footer>
 
 </div>
