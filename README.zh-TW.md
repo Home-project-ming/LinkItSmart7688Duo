@@ -22,6 +22,7 @@
 | [`docs/superpowers/plans/`](docs/superpowers/plans/) | 逐任務的實作計畫 |
 | [`CLAUDE.md`](CLAUDE.md) | 給在這個 repo 裡工作的 AI coding agent 看的指引——板子架構、工具鏈、真正可用的 build/test/deploy 指令 |
 | [`.claude/skills/mt7688-hardware/`](.claude/skills/mt7688-hardware/) | 一份 agent skill,教怎麼有效使用已部署的 MCP 工具——什麼情況該用哪個工具、安全限制,以及單看工具 schema 看不出來的眉角 |
+| [`TODO.md`](TODO.md) | 待辦清單,依價值排序——第一名是能讓 SD 卡上常駐服務變可靠的 squashfs 實驗,另含等硬體才能補的驗證缺口與已結案事項 |
 
 ## 這塊板子
 

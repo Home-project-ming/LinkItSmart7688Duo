@@ -29,6 +29,7 @@ audio, and (via a second onboard processor) analog input.
 | [`docs/superpowers/plans/`](docs/superpowers/plans/) | Task-by-task implementation plans |
 | [`CLAUDE.md`](CLAUDE.md) | Instructions for AI coding agents working in this repo — board architecture, toolchains, real build/test/deploy commands |
 | [`.claude/skills/mt7688-hardware/`](.claude/skills/mt7688-hardware/) | An agent skill for using the deployed MCP tools effectively — when to reach for which tool, safety limits, and gotchas that aren't obvious from a tool's schema alone |
+| [`TODO.md`](TODO.md) | Outstanding work, ordered by value — headed by the squashfs experiment that would make SD-resident always-on services reliable — plus hardware-gated verification gaps and closed dead ends |
 
 ## The board
 
