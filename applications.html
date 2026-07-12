@@ -214,56 +214,101 @@
 <section id="board">
   <h2>🔍 先認識這塊板子 <span class="tag" style="background:#ffb300">2 顆晶片、1 條橋</span></h2>
   <div class="panel board-flex">
-    <svg viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LinkIt Smart 7688 Duo 板子示意圖">
+    <svg viewBox="0 0 800 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LinkIt Smart 7688 Duo 板子俯視示意圖(依官方 pinout 佈局)">
+      <defs>
+        <linearGradient id="shieldg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#d3d9dd"/>
+          <stop offset=".5" stop-color="#b9c1c7"/>
+          <stop offset="1" stop-color="#a5aeb5"/>
+        </linearGradient>
+      </defs>
+      <!-- 頂部標註 -->
+      <text x="160" y="44" font-size="12" fill="#5b617a">上下兩排腳位:GPIO・I2C・SPI・PWM・UART</text>
+      <path d="M220 50 V 80" stroke="#e05555" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+      <text x="450" y="44" font-size="12" fill="#5b617a">MT7688AN + 128MB DDR2(金屬屏蔽罩下)</text>
+      <path d="M540 50 V 104" stroke="#e05555" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
       <!-- PCB -->
-      <rect x="30" y="40" width="580" height="280" rx="18" fill="#1b7f4d" stroke="#0e5c36" stroke-width="3"/>
+      <rect x="150" y="80" width="540" height="280" rx="10" fill="#1b7f4d" stroke="#0e5c36" stroke-width="3"/>
       <!-- 上下排針 -->
       <g fill="#f4c542">
-        <rect x="70" y="48" width="500" height="14" rx="4"/>
-        <rect x="70" y="298" width="500" height="14" rx="4"/>
+        <rect x="165" y="84" width="510" height="13" rx="3"/>
+        <rect x="165" y="343" width="510" height="13" rx="3"/>
       </g>
-      <text x="320" y="35" text-anchor="middle" font-size="13" fill="#555">GPIO / I2C / SPI / PWM / UART 排針</text>
-      <!-- 天線 -->
-      <path d="M560 90 q30 -25 0 -50" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/>
-      <path d="M572 96 q46 -38 0 -74" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity=".65"/>
-      <text x="545" y="112" text-anchor="end" font-size="13" fill="#fff">📶 WiFi 2.4GHz</text>
-      <!-- MT7688 -->
-      <rect x="90" y="105" width="170" height="130" rx="10" fill="#37474f" stroke="#111" stroke-width="2"/>
-      <text x="175" y="155" text-anchor="middle" font-size="20" font-weight="bold" fill="#fff">MT7688</text>
-      <text x="175" y="180" text-anchor="middle" font-size="12" fill="#cfd8dc">OpenWrt Linux</text>
-      <text x="175" y="200" text-anchor="middle" font-size="12" fill="#cfd8dc">WiFi・USB・SD 卡</text>
-      <text x="175" y="220" text-anchor="middle" font-size="12" fill="#cfd8dc">跑 MCP server 📡</text>
-      <!-- ATmega -->
-      <rect x="390" y="120" width="140" height="100" rx="10" fill="#4527a0" stroke="#2a1770" stroke-width="2"/>
-      <text x="460" y="158" text-anchor="middle" font-size="17" font-weight="bold" fill="#fff">ATmega32U4</text>
-      <text x="460" y="180" text-anchor="middle" font-size="12" fill="#d1c4e9">Arduino 相容</text>
-      <text x="460" y="200" text-anchor="middle" font-size="12" fill="#d1c4e9">12 路類比輸入 📈</text>
-      <!-- 橋接 -->
-      <g stroke="#ffd54f" stroke-width="5" fill="none">
-        <path d="M262 170 H 388" marker-end="url(#arr)"/>
-        <path d="M388 190 H 262" marker-end="url(#arr)"/>
+      <!-- USB Host(左上)與 USB 電源 & MCU USB(左下) -->
+      <rect x="128" y="104" width="40" height="50" rx="4" fill="#cfd6da" stroke="#8d979e" stroke-width="2"/>
+      <rect x="134" y="112" width="26" height="34" fill="#9aa4ab"/>
+      <rect x="128" y="256" width="40" height="50" rx="4" fill="#cfd6da" stroke="#8d979e" stroke-width="2"/>
+      <rect x="134" y="264" width="26" height="34" fill="#9aa4ab"/>
+      <text x="4" y="118" font-size="13" fill="#2d3142">USB Host</text>
+      <text x="4" y="134" font-size="10" fill="#8a8f9f">Micro-AB・隨身碟/喇叭</text>
+      <text x="4" y="270" font-size="13" fill="#2d3142">USB 電源 &amp;</text>
+      <text x="4" y="286" font-size="13" fill="#2d3142">MCU USB 埠</text>
+      <text x="4" y="302" font-size="10" fill="#e05555">ATmega 靠它供電!</text>
+      <!-- 電源 / WiFi LED -->
+      <circle cx="185" cy="192" r="6" fill="#ffca28" stroke="#c99a1e"/>
+      <circle cx="185" cy="214" r="6" fill="#4fc3f7" stroke="#2286b5"/>
+      <text x="176" y="196" text-anchor="end" font-size="9" fill="#cfe8d8">PWR</text>
+      <text x="176" y="218" text-anchor="end" font-size="9" fill="#cfe8d8">WiFi</text>
+      <text x="4" y="206" font-size="11" fill="#2d3142">電源・WiFi 指示燈</text>
+      <path d="M100 210 H 168" stroke="#e05555" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+      <!-- 三顆 Reset 鈕(直排) -->
+      <g>
+        <rect x="222" y="108" width="24" height="24" rx="4" fill="#e3e7ea" stroke="#8d979e"/>
+        <circle cx="234" cy="120" r="6" fill="#aab3ba"/>
+        <text x="234" y="146" text-anchor="middle" font-size="8" fill="#cfe8d8">MPU RST</text>
+        <rect x="222" y="196" width="24" height="24" rx="4" fill="#e3e7ea" stroke="#8d979e"/>
+        <circle cx="234" cy="208" r="6" fill="#aab3ba"/>
+        <text x="234" y="234" text-anchor="middle" font-size="8" fill="#cfe8d8">WIFI RST</text>
+        <rect x="222" y="284" width="24" height="24" rx="4" fill="#e3e7ea" stroke="#8d979e"/>
+        <circle cx="234" cy="296" r="6" fill="#aab3ba"/>
+        <text x="234" y="322" text-anchor="middle" font-size="8" fill="#cfe8d8">MCU RST</text>
       </g>
-      <defs>
-        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
-          <path d="M0,0 L8,4 L0,8 z" fill="#ffd54f"/>
-        </marker>
-      </defs>
-      <text x="325" y="152" text-anchor="middle" font-size="13" fill="#ffe082" font-weight="bold">UART 橋接</text>
-      <text x="325" y="215" text-anchor="middle" font-size="12" fill="#ffe082">Firmata 協定 🌉</text>
-      <!-- USB / SD -->
-      <rect x="30" y="250" width="46" height="34" rx="4" fill="#b0bec5" stroke="#78909c"/>
-      <text x="86" y="272" font-size="12" fill="#fff">USB Host 🔌</text>
-      <rect x="30" y="120" width="40" height="30" rx="4" fill="#b0bec5" stroke="#78909c"/>
-      <text x="80" y="140" font-size="12" fill="#fff">Micro SD 💾</text>
-      <rect x="564" y="250" width="46" height="34" rx="4" fill="#b0bec5" stroke="#78909c"/>
-      <text x="556" y="272" text-anchor="end" font-size="12" fill="#fff">🔌 MCU USB / 電源</text>
+      <!-- LED (D13) -->
+      <circle cx="268" cy="296" r="5" fill="#ef5350" stroke="#b71c1c"/>
+      <text x="278" y="300" font-size="9" fill="#cfe8d8">LED D13</text>
+      <!-- ATmega32U4(QFP,屏蔽罩左側) -->
+      <line x1="302" y1="146" x2="370" y2="146" stroke="#d9c06a" stroke-width="5" stroke-dasharray="3 4"/>
+      <line x1="302" y1="244" x2="370" y2="244" stroke="#d9c06a" stroke-width="5" stroke-dasharray="3 4"/>
+      <line x1="292" y1="156" x2="292" y2="234" stroke="#d9c06a" stroke-width="5" stroke-dasharray="3 4"/>
+      <line x1="380" y1="156" x2="380" y2="234" stroke="#d9c06a" stroke-width="5" stroke-dasharray="3 4"/>
+      <rect x="296" y="150" width="80" height="90" rx="6" fill="#263238" stroke="#111" stroke-width="1.5"/>
+      <circle cx="306" cy="160" r="3" fill="#555"/>
+      <text x="336" y="192" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">ATmega32U4</text>
+      <text x="336" y="208" text-anchor="middle" font-size="9" fill="#90a4ae">AVR・8 MHz</text>
+      <!-- UART 橋接走線 -->
+      <path d="M384 195 H 412" stroke="#ffd54f" stroke-width="3" stroke-dasharray="6 4" fill="none"/>
+      <text x="398" y="186" text-anchor="middle" font-size="9" fill="#ffe082">UART</text>
+      <!-- 金屬屏蔽罩(MT7688AN + DDR2 在下面) -->
+      <rect x="414" y="108" width="246" height="204" rx="8" fill="url(#shieldg)" stroke="#8d979e" stroke-width="2"/>
+      <rect x="424" y="118" width="226" height="184" rx="5" fill="none" stroke="#dde3e7" stroke-width="1" opacity=".8"/>
+      <text x="537" y="180" text-anchor="middle" font-size="15" font-weight="bold" fill="#4a5560">LinkIt™ Smart 7688</text>
+      <text x="630" y="212" text-anchor="end" font-size="22" font-weight="bold" fill="#4a5560">Duo</text>
+      <text x="630" y="296" text-anchor="end" font-size="9" fill="#7c868d">CE・FCC</text>
+      <!-- microSD(插槽在板子背面) -->
+      <rect x="424" y="236" width="92" height="58" rx="6" fill="none" stroke="#5f6a72" stroke-width="2" stroke-dasharray="7 5"/>
+      <text x="470" y="262" text-anchor="middle" font-size="10" fill="#5f6a72">microSD 💾</text>
+      <text x="470" y="276" text-anchor="middle" font-size="9" fill="#5f6a72">(插槽在背面)</text>
+      <!-- 晶片天線(右緣)與 I-PEX 座 -->
+      <rect x="672" y="126" width="12" height="46" rx="3" fill="#212121" stroke="#000"/>
+      <text x="700" y="142" font-size="12" fill="#2d3142">📶 晶片天線</text>
+      <text x="700" y="157" font-size="10" fill="#8a8f9f">(預設)</text>
+      <path d="M698 146 H 688" stroke="#e05555" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+      <circle cx="655" cy="332" r="8" fill="#d9c06a" stroke="#a8873a" stroke-width="2"/>
+      <circle cx="655" cy="332" r="3" fill="#fff8e1"/>
+      <text x="700" y="330" font-size="11" fill="#2d3142">I-PEX 天線座</text>
+      <text x="700" y="344" font-size="10" fill="#8a8f9f">(需改硬體)</text>
+      <path d="M698 334 H 666" stroke="#e05555" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+      <!-- 底部標註:ATmega -->
+      <path d="M356 248 V 396" stroke="#e05555" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+      <text x="356" y="414" text-anchor="middle" font-size="13" fill="#2d3142">ATmega32U4(Arduino 相容)</text>
+      <text x="356" y="432" text-anchor="middle" font-size="11" fill="#8a8f9f">A0–A11 共 12 路類比輸入・可從 Linux 側 ISP 重刷韌體</text>
     </svg>
     <div class="board-note">
       <p><b>LinkIt Smart 7688 Duo</b> 的重點就在「Duo」——兩顆個性完全不同的處理器,由一條 UART 橋接起來:</p>
       <ul>
-        <li>🧠 <b>MT7688</b>:跑 Linux,負責 WiFi、網路服務、USB、SD 卡,也是 MCP server 的家</li>
-        <li>🎛️ <b>ATmega32U4</b>:Arduino 相容,負責即時 I/O 和 <b>類比輸入</b>(MT7688 自己完全沒有 ADC!)</li>
-        <li>🌉 <b>橋</b>:AI 下的指令穿過這條 UART,就能讀到真實世界的類比訊號</li>
+        <li>🧠 <b>MT7688</b>(藏在那塊印著產品名的金屬屏蔽罩下,旁邊是 128MB DDR2):跑 Linux,負責 WiFi、網路服務、USB、SD 卡,也是 MCP server 的家</li>
+        <li>🎛️ <b>ATmega32U4</b>(屏蔽罩左邊那顆小 QFP 晶片):Arduino 相容,負責即時 I/O 和 <b>類比輸入</b>(MT7688 自己完全沒有 ADC!)——它的電源和燒錄都走左下那個「USB 電源 &amp; MCU USB 埠」</li>
+        <li>🌉 <b>橋</b>:兩顆晶片之間有一條板內 UART 走線,AI 下的指令穿過這條橋,就能讀到真實世界的類比訊號</li>
       </ul>
       <p style="margin-top:12px">本專案的 MCP server 提供 13 個工具:GPIO 讀寫、I2C、SPI、PWM、UART、I2S 音訊播放、ATmega ADC 橋接——AI 一句話就能呼叫。</p>
     </div>
