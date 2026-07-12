@@ -6,27 +6,37 @@
 > (GPIO/I2C → SPI/PWM → UART → I2S → ATmega 橋接 → ADC)已全部完成
 > ——這裡列的是路線圖之外還掛著的事。
 
-## 🥇 最值得投入:squashfs 實驗(修 SD 卡執行檔隨機崩潰)
+## 🥇 最值得投入:squashfs /opt 上線化
 
-- [ ] **把 `/opt`(Entware)打包成 squashfs 映像檔放在 SD 上、loop-mount 使用,驗證是否根絕 SIGILL/SIGSEGV。**
+- [ ] 開機自動 `losetup` + mount `/overlay/opt.sqfs`,把 `/opt` 指向唯讀
+  映像(bind mount 或直接掛在 `/opt` 上)——Entware 服務從此可以安全
+  開機自啟。
+- [ ] 設計「改動 /opt 之後重建映像」的流程:`opkg` 裝/更新套件 → 重跑
+  `provisioning/05-squashfs-opt/03_build_image.sh` → remount。日常唯讀,
+  更新時才寫。
+- [ ] 重開機驗證自動掛載生效後,解除 dev-notes 裡「不要把 /opt 放進
+  開機自啟服務」的禁令(`rc.unslung` 可以進 `/etc/rc.local` 了)。
 
-**問題**:`/opt` 在 SD 卡上,任何動態連結執行檔的頁面被逐出 page cache
-後、從 SD 重新 fault 回來,就會隨機 SIGILL/SIGSEGV/SIGBUS
-(`dev-notes.html` 的「SD 執行不穩」章節有完整證據與已排除清單)。
-後果:板上的 Python 不能放心當常駐服務,`rc.local` 刻意沒有加自啟。
+## ✅ 已完成:squashfs 實驗(2026-07-12)——SD 執行檔隨機崩潰找到繞道
 
-**為什麼 squashfs 有機會**:squashfs 的頁面是 CPU 解壓縮後寫入的,
-不是 DMA 直接填入被 mmap 的頁面——這剛好解釋為什麼內建 flash 上的
-squashfs(`/rom`)從來沒出過事。
+- [x] 把 `/opt` 打包成 squashfs 映像放 SD、loop-mount,驗證是否根絕 SIGILL/SIGSEGV。
 
-**為什麼值得**:若成功,「板上跑 Python 常駐服務」從不可靠變可靠,
-`applications.html` 第 3 類(免動手的常駐網路服務)一大半點子都直接受惠。
+**結果:成功,且數據乾淨利落。** 同一張 SD、同樣的檔案、同樣的
+`drop_caches` 冷快取條件:ext4 直讀對照組 grep **0/10**、python3
+**0/10**(完全重現歷史數據);squashfs loop-mount 實驗組 grep
+**10/10**、python3 **10/10**;加碼 soak(grep/python3 各 20 次 +
+`PYTHONHOME` 指進映像的真實 Python 運算 10 次)**70/70 全過**。
+同時佐證 I-cache/DMA 不一致理論——squashfs 頁面由 CPU 解壓寫入,
+不走 DMA 直填 mmap 頁面。
 
-**驗收方式**:沿用 dev-notes 記錄的測試法——`drop_caches` 後冷啟動
-10 次;現行 ext4 直讀為對照組(歷史紀錄 0/10),squashfs loop-mount
-實驗組目標 10/10。
+**細節**:kernel 的 squashfs 只編了 xz 解壓(gzip 映像會被拒),映像
+27.4MB(原 67.5MB);需側載 `kmod-loop`+`losetup`(原廠 kernel 沒有
+loop device);mksquashfs 要從 tmpfs 執行(它自己就是會冷快取崩潰的
+SD 上 glibc 執行檔)。腳本與側載 ipk 都在
+`provisioning/05-squashfs-opt/`。目前的 loop mount 重開機即消失——
+上線化見上方新的第一名。
 
-**根治備案**:升級到 kernel ≥ 5.x 的現代 OpenWrt(工程量大、風險另議)。
+**根治備案**(不急):升級到 kernel ≥ 5.x 的現代 OpenWrt。
 
 ## 🔌 等硬體到位才能補的驗證缺口
 

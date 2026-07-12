@@ -37,7 +37,7 @@
 ## 目前做到的事
 
 - **Extroot 完成**:根檔案系統的可寫層從 9.8 MB 的內建 flash 搬到 116 GiB 的 SD 卡(空間大約多了一萬一千倍),重開機後仍然生效。
-- **在 2016 年的韌體上跑現代 Python**:靠 Entware 的 `mipselsf-k3.4` target,自帶 glibc,跟系統的 uClibc 完全隔離——但有一個已經記錄下來、還沒解決的穩定性問題(見 `dev-notes.html`)。
+- **在 2016 年的韌體上跑現代 Python**:靠 Entware 的 `mipselsf-k3.4` target,自帶 glibc,跟系統的 uClibc 完全隔離。長期困擾的穩定性問題(SD 上的執行檔冷快取執行會隨機崩潰)已在 2026-07-12 實驗證實有繞道——同樣的檔案改由同一張 SD 上的 squashfs loop-mount 提供,從 0/20 變 70/70(見 `dev-notes.html`;開機整合排入 `TODO.md`)。
 - **抓到並修好一個真實的網路橋接迴圈**:WiFi 上行介面不小心跟有線網路埠橋接在同一個 L2 網段、又沒開 STP——這是直接在板子上現場診斷出來的,不是用猜的。
 - **一個真的能用的 MCP server**,已經部署到真實硬體上驗證過:13 個工具涵蓋 GPIO/I2C/SPI/PWM/UART/I2S/ATmega 橋接,寫死的安全黑名單(console UART、SD/extroot 控制線、ATmega 橋接 UART、ISP 相關腳位)在碰硬體之前一定先檢查,而且抓到好幾個只有在真實測試或 code review 時才會浮現的 bug(GPIO export 的併發競爭、Go 的 `[]byte` 在 JSON 序列化時跟陣列格式對不上、一個可能讓 ATmega 橋接卡在協定中間卻被靜默吞掉的錯誤)——現在都修好了,也補上了迴歸測試。
 - **第二顆處理器完整打通**:ATmega32U4 跑 Arduino 韌體,透過它自己專屬的 UART(在 Linux 這側實測確認是 `/dev/ttyS0`,跟 `uart_transact` 用的通用 UART是不同的實體埠)講一個精簡版 Firmata 協定,讓 MCP server 擁有 MT7688 晶片本身沒有的真正類比輸入能力。

@@ -174,3 +174,28 @@ through an ordinary home router that doesn't understand STP at all, so the
 board's own bridge has no way to learn that `eth0` and `apcli0` are secretly
 the same segment. The only real fix is topological — stop bridging one of the
 two paths, route it instead.
+
+## 05-squashfs-opt/
+
+The fix experiment for 03's finding: pack `/opt` into a squashfs image on
+the **same SD card** and loop-mount it. squashfs pages are decompressed by
+the CPU into the page cache instead of DMA-filled on the mmap fault path —
+the same reason the stock rootfs (`/rom`, squashfs on flash) never
+misbehaved.
+
+Result (2026-07-12): **ext4 control 0/20, squashfs 70/70**, all cold-cache.
+
+| Script | What it does |
+|---|---|
+| `01_loop_support.sh` | Sideloads `kmod-loop` + `losetup` (+ `libsmartcols`) from `ipk/` — the stock kernel has no loop-device support at all. |
+| `02_install_squashfs_tools.sh` | Installs Entware's `squashfs-tools-mksquashfs` (note the split package name — there is no plain `squashfs-tools`), with retries because Entware's own `opkg` is subject to the very bug being fixed. |
+| `03_build_image.sh` | Builds `/overlay/opt.sqfs` (27.4 MB from 67.5 MB). Stages mksquashfs + the Entware loader + libs into tmpfs and runs it **from RAM** (the investigation's proven case-b workaround). **Must be `-comp xz`** — this kernel's squashfs has only the xz decompressor; a gzip image is rejected with `Filesystem uses "zlib" compression`. |
+| `04_mount_and_probe.sh` | losetup + mount, then the exact `test_triangulate.sh` probe against identical binaries in both locations: ext4 grep 0/10 / python3 0/10 (history reproduced), squashfs grep 10/10 / python3 10/10, busybox-from-flash sanity 10/10. |
+| `05_soak.sh` | 20 more cold rounds each for grep/python3 plus 10 rounds of a real Python computation with `PYTHONHOME` inside the image: 50/50. |
+
+`ipk/` holds the three sideloaded packages (same archive.openwrt.org feed
+and vermagic as `01-sd-extroot/ipk/`).
+
+Not yet done (tracked in `../TODO.md`): making it permanent — mount at
+boot, point `/opt` at the image, and a rebuild-image workflow for after
+`opkg` changes. The loop mount set up here does not survive a reboot.

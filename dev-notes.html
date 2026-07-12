@@ -286,7 +286,7 @@
       <a href="#uv">為什麼 uv 不行</a>
       <a href="#entware">Entware 路線</a>
       <a href="#python-result">安裝結果</a>
-      <a href="#sigill">SD 執行不穩<span class="chip">未解</span></a>
+      <a href="#sigill">SD 執行不穩<span class="chip">已繞道</span></a>
       <a href="#python-usable">現在能用嗎</a>
     </div>
     <div class="group">
@@ -661,7 +661,7 @@ config global
 </section>
 
 <section id="sigill">
-  <h2>⚠ 從 SD 執行的 Entware 二進位檔會隨機崩潰 <span class="status blocked">未解</span></h2>
+  <h2>⚠ 從 SD 執行的 Entware 二進位檔會隨機崩潰 <span class="status partial">已有繞道</span></h2>
   <p>
     這是整個過程中最嚴重的發現,而且它<strong>不是 Python 的問題</strong>。
     只要 <code>/opt</code> 底下任何執行檔的頁面被逐出 page cache、必須從 SD 重新 fault 回來,
@@ -708,12 +708,24 @@ e) busybox from flash (squashfs)      <span class="ok">ok=10/10</span></pre>
     </table>
   </div>
 
-  <h3>還沒試的方向</h3>
+  <h3>已驗證的繞道(2026-07-12)</h3>
   <p>
-    最有希望的是把 <code>/opt</code> 打包成 <strong>squashfs 映像檔放在 SD 上,再 loop-mount</strong>。
+    把 <code>/opt</code> 打包成 <strong>squashfs 映像檔放在同一張 SD 上,再 loop-mount</strong>。
     squashfs 的頁面是 CPU 解壓縮寫進去的,不是 DMA 直接填入被 mmap 的頁面 ——
-    這剛好解釋了為什麼 flash 上的 squashfs(<code>/rom</code>)從來沒出過事。<em>尚未驗證。</em>
-    真正的修復大概是換一版 kernel ≥ 5.x 的現代 OpenWrt。
+    這剛好解釋了為什麼 flash 上的 squashfs(<code>/rom</code>)從來沒出過事。
+    實驗結果(與上表同一套冷快取測試法):
+  </p>
+  <pre>ext4 直讀(對照組)     grep <span class="bad">0/10</span>   python3 <span class="bad">0/10</span>
+squashfs loop-mount     grep <span class="ok">10/10</span>  python3 <span class="ok">10/10</span>
+soak 加碼               grep+python3 各 20 次、真實 Python 運算 10 次 → <span class="ok">70/70</span></pre>
+  <p>
+    同一張卡、同樣的檔案、同樣的逐次 <code>drop_caches</code> —— 唯一的差別是頁面
+    怎麼進記憶體。細節與腳本在 <code>provisioning/05-squashfs-opt/</code>:kernel 的
+    squashfs 只編了 xz 解壓(gzip 映像會被拒)、原廠 kernel 連 loop device 都沒有
+    (側載 <code>kmod-loop</code>+<code>losetup</code>)、mksquashfs 得先搬進 tmpfs
+    從 RAM 執行(它自己就是會冷快取崩潰的 SD 上 glibc 執行檔)。
+    開機自動掛載的上線化列在 <code>TODO.md</code>;真正的根治仍是換一版
+    kernel ≥ 5.x 的現代 OpenWrt。
   </p>
 </section>
 
@@ -729,6 +741,8 @@ e) busybox from flash (squashfs)      <span class="ok">ok=10/10</span></pre>
     板子只跑純 Python 程式碼,並且接受它可能需要重試。
     在上面那個問題解決之前,不要把 <code>/opt</code> 裡的東西放進開機自動啟動的服務 ——
     這也是為什麼 <code>rc.unslung</code> 那段<strong>刻意沒有</strong>寫進 <code>/etc/rc.local</code>。
+    <strong>2026-07-12 起這條禁令有了出口</strong>:squashfs 繞道已實驗證實(見上節,70/70),
+    等開機自動掛載上線(<code>TODO.md</code> 第一項)之後,這條界線就可以正式解除。
   </p>
 </section>
 
