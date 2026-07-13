@@ -35,7 +35,7 @@ param(
     [Parameter(ParameterSetName = 'Command', Mandatory)]
     [string] $Command,
 
-    [string] $BoardHost = '192.168.50.216',
+    [string] $BoardHost = '192.168.31.156',
     [string] $User      = 'root',
 
     # Pin the host key. Obtain a new one by running plink with -batch once:

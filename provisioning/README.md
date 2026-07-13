@@ -11,7 +11,7 @@ Narrative write-up with all the pitfalls: [`../dev-notes.html`](../dev-notes.htm
 
 | | |
 |---|---|
-| Host | `192.168.50.216` / `mylinkit.local` (verify with `ping -4`) |
+| Host | `192.168.31.156` / `mylinkit.local` (DHCP-assigned, moves when the board changes network — verify with `ping -4`) |
 | Arch | mipsel 32-bit, soft-float (no FPU), MIPS 24KEc |
 | Firmware | OpenWrt 15.05.1 Chaos Calmer, kernel 3.18.23 |
 | vermagic | `3.18.23-1-32322c69cacfebf6e22f4e61cea9bebc` |
@@ -33,7 +33,7 @@ invocations; repeated attempts produced no output and no file). Use the **native
 client (already present on this machine at `/usr/bin/ssh`) instead, for key-based auth:
 
 ```powershell
-ssh -i .\provisioning\lib\keys\board_rsa -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa -o MACs=+hmac-sha1 root@192.168.50.216 '<command>'
+ssh -i .\provisioning\lib\keys\board_rsa -o KexAlgorithms=+diffie-hellman-group14-sha1 -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedAlgorithms=+ssh-rsa -o MACs=+hmac-sha1 root@192.168.31.156 '<command>'
 ```
 
 All four legacy-algorithm overrides are required, each for a different negotiation phase
@@ -51,7 +51,7 @@ password):
 
 ```powershell
 $env:BOARD_PASSWORD = '<password>'
-pscp -scp -batch -hostkey SHA256:pmSxVegIX1+q4Mkux0AB1hPZYylPT12RuMC0hAWLNa4 -pw $env:BOARD_PASSWORD .\lib\keys\board_rsa.pub root@192.168.50.216:/tmp/mcp_key_rsa.pub
+pscp -scp -batch -hostkey SHA256:pmSxVegIX1+q4Mkux0AB1hPZYylPT12RuMC0hAWLNa4 -pw $env:BOARD_PASSWORD .\lib\keys\board_rsa.pub root@192.168.31.156:/tmp/mcp_key_rsa.pub
 .\lib\run-on-board.ps1 -Command 'mkdir -p /etc/dropbear && cat /tmp/mcp_key_rsa.pub >> /etc/dropbear/authorized_keys && chmod 600 /etc/dropbear/authorized_keys && rm /tmp/mcp_key_rsa.pub'
 ```
 

@@ -14,7 +14,7 @@
 # (confirmed via `ssh -G ... | Select-String macs`) - hence MACs=+hmac-sha1
 # alongside the Kex/HostKey/Pubkey algorithm overrides below.
 param(
-    [string] $BoardHost = '192.168.50.216',
+    [string] $BoardHost = '192.168.31.156',
     [string] $KeyFile   = (Join-Path $PSScriptRoot '..\provisioning\lib\keys\board_rsa')
 )
 
