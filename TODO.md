@@ -6,16 +6,27 @@
 > (GPIO/I2C → SPI/PWM → UART → I2S → ATmega 橋接 → ADC)已全部完成
 > ——這裡列的是路線圖之外還掛著的事。
 
-## 🥇 最值得投入:squashfs /opt 上線化
+## ✅ 已完成:squashfs /opt 上線化(2026-07-14)
 
-- [ ] 開機自動 `losetup` + mount `/overlay/opt.sqfs`,把 `/opt` 指向唯讀
-  映像(bind mount 或直接掛在 `/opt` 上)——Entware 服務從此可以安全
-  開機自啟。
-- [ ] 設計「改動 /opt 之後重建映像」的流程:`opkg` 裝/更新套件 → 重跑
+- [x] 開機自動 `losetup` + mount `/overlay/opt.sqfs`,把 `/opt` 指向唯讀
+  映像——Entware 服務從此可以安全開機自啟。
+- [x] 設計「改動 /opt 之後重建映像」的流程:`opkg` 裝/更新套件 → 重跑
   `provisioning/05-squashfs-opt/03_build_image.sh` → remount。日常唯讀,
   更新時才寫。
-- [ ] 重開機驗證自動掛載生效後,解除 dev-notes 裡「不要把 /opt 放進
+- [x] 重開機驗證自動掛載生效後,解除 dev-notes 裡「不要把 /opt 放進
   開機自啟服務」的禁令(`rc.unslung` 可以進 `/etc/rc.local` 了)。
+
+**結果:成功,實機重開機驗證通過。** 新增 `provisioning/05-squashfs-opt/`
+兩支腳本:`06_install_boot_hook.sh`(冪等安裝開機掛載鉤子到
+`/etc/rc.local`,失敗不影響開機/不影響 SSH)、`07_opt_maintenance.sh`
+(`unlock`/`rebuild` 兩個子命令,對應「解掛露出可寫目錄 → opkg 操作 →
+重建映像+重新掛載」的維護流程)。實際對板子下 `reboot` 後確認:
+`/opt` 無人值守自動掛載成 `squashfs(ro)`、寫入測試回報
+`Read-only file system`、冷快取下 `grep --version`/`python3 --version`
+皆正常執行,不再重現 03-diagnostics 的 SIGILL/SIGSEGV。設計與實作細節見
+`docs/superpowers/specs/2026-07-14-squashfs-opt-boot-mount-design.md`
+與 `docs/superpowers/plans/2026-07-14-squashfs-opt-boot-mount.md`。
+dev-notes.html 的開機自啟禁令已同步解除。
 
 ## ✅ 已完成:squashfs 實驗(2026-07-12)——SD 執行檔隨機崩潰找到繞道
 

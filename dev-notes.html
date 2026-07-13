@@ -739,10 +739,13 @@ soak 加碼               grep+python3 各 20 次、真實 Python 運算 10 次 
   <p>
     所以現階段的務實用法是:<strong>把 uv 裝在 PC 上</strong>做依賴解析與鎖版,
     板子只跑純 Python 程式碼,並且接受它可能需要重試。
-    在上面那個問題解決之前,不要把 <code>/opt</code> 裡的東西放進開機自動啟動的服務 ——
-    這也是為什麼 <code>rc.unslung</code> 那段<strong>刻意沒有</strong>寫進 <code>/etc/rc.local</code>。
-    <strong>2026-07-12 起這條禁令有了出口</strong>:squashfs 繞道已實驗證實(見上節,70/70),
-    等開機自動掛載上線(<code>TODO.md</code> 第一項)之後,這條界線就可以正式解除。
+    在上面那個問題解決之前,<code>/opt</code> 裡的東西一度不建議放進開機自動啟動的服務,
+    這也是為什麼 <code>rc.unslung</code> 那段當初<strong>刻意沒有</strong>寫進 <code>/etc/rc.local</code>。
+    <strong>2026-07-14 起這條禁令已解除</strong>:squashfs /opt 開機自動掛載已上線並實機驗證通過
+    (見 <code>docs/superpowers/specs/2026-07-14-squashfs-opt-boot-mount-design.md</code> 與
+    <code>provisioning/05-squashfs-opt/06_install_boot_hook.sh</code>)——實際重開機測試確認
+    <code>/opt</code> 會無人值守自動掛載成唯讀 squashfs,且冷快取下 <code>grep</code>/<code>python3</code>
+    執行皆正常,<code>/opt</code> 底下的服務現在可以安全放進開機自動啟動。
   </p>
 </section>
 
