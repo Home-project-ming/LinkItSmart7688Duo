@@ -49,6 +49,16 @@ SD 上 glibc 執行檔)。腳本與側載 ipk 都在
 
 **根治備案**(不急):升級到 kernel ≥ 5.x 的現代 OpenWrt。
 
+## 🎯 進行中:XCS20 FPGA slave-serial 下載(2026-07-30 設計完成)
+
+- [ ] 依設計文件實作與 bring-up:
+  `docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`
+  ——用 7688 經 74AHCT125 轉壓接目標板 DB25,GPIO bit-bang slave serial,
+  拔 EPROM 下載(實機驗證過此模式可行,綠燈=成功)。bitstream 格式已
+  三重驗證(MSB-first、header 可變長、promgen=逐 byte 位元反轉)。
+- [ ] 待辦前置:焊 AHCT125 轉接板(BOM 在設計文件 §3)、確認 7688 排針
+  可用腳位(§5)、板子回線上後補唯讀檢查(§10)。
+
 ## 🔌 等硬體到位才能補的驗證缺口
 
 - [ ] `i2c_write`:目前只有 code review + 單元測試——需要一顆可安全寫入的

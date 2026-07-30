@@ -19,6 +19,7 @@
 | [`mt7688-mcp-server/`](mt7688-mcp-server/) | MCP server 本體——用 Go 寫、交叉編譯給板子用,開放 13 個硬體原語工具(GPIO/I2C/SPI/PWM/UART/I2S/ATmega 橋接)給 MCP client 呼叫 |
 | [`atmega-firmware/`](atmega-firmware/) | 板上第二顆處理器(ATmega32U4)用的 Arduino 韌體——`adc-bridge/` 透過晶片間的 UART 講一個 Firmata 子集,讓 MT7688 這側能讀到 ATmega 的類比輸入 |
 | [`docs/superpowers/specs/`](docs/superpowers/specs/) | 設計文件——記錄架構決策背後的理由,包括實作到一半才發現需要修正的部分 |
+| [`docs/*.jpeg`](docs/) | 2000 年 **Xilinx XCS20(Spartan-I)FPGA 目標板**的電路圖掃描——印表機埠下載介面、EPROM/CPLD 開機路徑、bypass 頁——就是這塊板子即將被拿來當 FPGA 燒錄器的對象(見下方亮點) |
 | [`docs/superpowers/plans/`](docs/superpowers/plans/) | 逐任務的實作計畫 |
 | [`CLAUDE.md`](CLAUDE.md) | 給在這個 repo 裡工作的 AI coding agent 看的指引——板子架構、工具鏈、真正可用的 build/test/deploy 指令 |
 | [`.claude/skills/mt7688-hardware/`](.claude/skills/mt7688-hardware/) | 一份 agent skill,教怎麼有效使用已部署的 MCP 工具——什麼情況該用哪個工具、安全限制,以及單看工具 schema 看不出來的眉角 |
@@ -41,6 +42,7 @@
 - **抓到並修好一個真實的網路橋接迴圈**:WiFi 上行介面不小心跟有線網路埠橋接在同一個 L2 網段、又沒開 STP——這是直接在板子上現場診斷出來的,不是用猜的。
 - **一個真的能用的 MCP server**,已經部署到真實硬體上驗證過:13 個工具涵蓋 GPIO/I2C/SPI/PWM/UART/I2S/ATmega 橋接,寫死的安全黑名單(console UART、SD/extroot 控制線、ATmega 橋接 UART、ISP 相關腳位)在碰硬體之前一定先檢查,而且抓到好幾個只有在真實測試或 code review 時才會浮現的 bug(GPIO export 的併發競爭、Go 的 `[]byte` 在 JSON 序列化時跟陣列格式對不上、一個可能讓 ATmega 橋接卡在協定中間卻被靜默吞掉的錯誤)——現在都修好了,也補上了迴歸測試。
 - **第二顆處理器完整打通**:ATmega32U4 跑 Arduino 韌體,透過它自己專屬的 UART(在 Linux 這側實測確認是 `/dev/ttyS0`,跟 `uart_transact` 用的通用 UART是不同的實體埠)講一個精簡版 Firmata 協定,讓 MCP server 擁有 MT7688 晶片本身沒有的真正類比輸入能力。
+- **下一站——FPGA 燒錄器**:用這塊板子對 1998 年的 **Xilinx XCS20** FPGA 打 slave serial 下載的完整設計已定案(2026-07-30):經 74AHCT125 電平轉換接目標板的 DB25 下載埠,GPIO bit-bang 約 2~5 秒送完,每條主張都標注依據等級——見 [`docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`](docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md)。Verilog→bitstream 工具鏈在姊妹 repo [FPGA_XCS20](https://github.com/MingChihLung/FPGA_XCS20)(bitstream 格式三重驗證)。
 
 ## 怎麼用這個 MCP server
 
