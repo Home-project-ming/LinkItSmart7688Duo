@@ -106,6 +106,13 @@ The firmware caches port registers at setup rather than hardcoding a
 pin-to-port map, because this board's variant has already been shown to
 deviate from a stock Leonardo (Phase A's missing `LED_BUILTIN`).
 
+`docs/duo_breakout_pinout.jpeg` is a photo of the Seeed breakout's
+silkscreen and shows both halves of this at once: the ATmega row is
+labelled `D8/PB4 D9/PB5 D10/PB6 D11/PB7 D12/PD6`, confirming the mapping
+above, and the MT7688 row is `PORST JTDO MDI_* USB_* TXD2 RXD2 GND 3V3`
+— **not one general-purpose GPIO**, which is the whole reason this
+transport exists.
+
 **Power-up order replaces the GATE pull-up.** While the ATmega is in
 reset its pins are inputs, so D11 floats and the 74LS125's channel-4
 output is indeterminate — if it settles low it enables the target's
