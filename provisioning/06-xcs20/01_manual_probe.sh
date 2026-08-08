@@ -1,6 +1,23 @@
 #!/bin/sh
 # Copyright (c) 2026 Ming-Chih Lung(Taiwan Tainan)
 #
+# ############################################################################
+# SUPERSEDED 2026-08-08 - THIS SCRIPT CANNOT WORK ON THIS BOARD.
+#
+# It drives the adapter from MT7688 sysfs GPIO. That is no longer where the
+# signals come from: the Duo breaks out only P1, P8 and P9 (P8/P9 being the
+# console UART), so the download moved to the ATmega32U4, whose pins this
+# script has no way to reach. Exporting five 7688 GPIO numbers here will
+# either fail or toggle pins that go nowhere near the DB25.
+#
+# The single-step check it existed to provide is now built into the firmware:
+# the download's BEGIN phase pulses /PROGRAM and refuses to stream if DONE
+# does not fall, so a wiring fault is caught before any of the 22KB goes out.
+#
+# See docs/superpowers/specs/2026-08-08-xcs20-download-via-atmega.md.
+# Kept only for a board that does have free GPIOs.
+# ############################################################################
+#
 # Manual bring-up probe for the XCS20 slave-serial download path.
 #
 # This is the rung between "fpga_configure --dry-run" (parses the .bit,

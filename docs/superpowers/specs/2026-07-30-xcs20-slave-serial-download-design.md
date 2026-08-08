@@ -146,6 +146,14 @@ outputs.
 
 ## 5. 7688-side transport choice
 
+> **Superseded 2026-08-08 by
+> `2026-08-08-xcs20-download-via-atmega.md`.** This section's premise was
+> wrong: the Duo breaks out only P1, P8 and P9 (Developer's Guide Table
+> 8), and P8/P9 are the console UART — one free pin, not the five this
+> needs. The candidate list below is the bare 7688 module's SoC pins, not
+> this board's header. The download now runs on the ATmega32U4 over the
+> Firmata bridge. Everything else in this document still stands.
+
 **Chosen: GPIO bit-bang from a dedicated Go loop (not the generic MCP
 gpio_write, not hardware SPI).**
 

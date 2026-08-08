@@ -4,7 +4,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Status: active.** The MT7688-side MCP server (`mt7688-mcp-server/`, 14 tools: GPIO/I2C/SPI/PWM/UART/I2S/ATmega bridge/FPGA) and the ATmega32U4-side Arduino firmware (`atmega-firmware/`) are both implemented and deployed; all but the newest tool are live-verified against real hardware — see [`README.md`](README.md) for the current status summary. **`fpga_configure` is the exception: implemented and unit-tested, never yet run against the target board** (the 74AHCT125 adapter it needs does not exist yet). Do not describe it as verified. The sections below document the *board architecture* (durable, load-bearing context) and the *standard toolchains*. A few sections are still marked **TODO** where genuinely nothing in this repo has needed that capability yet (e.g. raw MIPS C cross-compilation) — don't invent commands for those; confirm against actual files first if/when that work starts.
+> **Status: active.** The MT7688-side MCP server (`mt7688-mcp-server/`, 14 tools: GPIO/I2C/SPI/PWM/UART/I2S/ATmega bridge/FPGA) and the ATmega32U4-side Arduino firmware (`atmega-firmware/`) are both implemented and deployed; all but the newest tool are live-verified against real hardware — see [`README.md`](README.md) for the current status summary. **`fpga_configure` is the exception: implemented and unit-tested, never yet run against the target board** (the 74LS125 adapter it needs is not built yet). Do not describe it as verified. It streams the bitstream to the ATmega over the bridge rather than driving MT7688 GPIO — see `docs/superpowers/specs/2026-08-08-xcs20-download-via-atmega.md`, which supersedes §5 of the 2026-07-30 design. The sections below document the *board architecture* (durable, load-bearing context) and the *standard toolchains*. A few sections are still marked **TODO** where genuinely nothing in this repo has needed that capability yet (e.g. raw MIPS C cross-compilation) — don't invent commands for those; confirm against actual files first if/when that work starts.
 
 ## What this board is
 
@@ -28,7 +28,7 @@ The LinkIt Smart 7688 **Duo** carries **two independent processors** that talk t
 
 ## Working on the MT7688 (Linux/OpenWrt) side
 
-Access is over SSH; the board default is user `root` at `mylinkit.local` (or `192.168.100.1` when the board is its own AP), confirmed live host `192.168.31.156` (changed from the earlier `192.168.50.216` after the board moved onto wired Ethernet on a different router/subnet — this is DHCP-assigned and can move again; re-verify with `ping -4 mylinkit.local` rather than trusting a hardcoded IP). Full credential/SSH-key setup (which key, why `plink` doesn't work, the four legacy-algorithm overrides this old Dropbear needs) is documented in [`provisioning/README.md`](provisioning/README.md) — don't re-derive it, read that file.
+Access is over SSH; the board default is user `root` at `mylinkit.local` (or `192.168.100.1` when the board is its own AP), confirmed live host `192.168.50.216` (2026-08-08; it had moved to `192.168.31.156` for a while and came back — this is DHCP-assigned and will move again). **`ping -4 mylinkit.local` does not resolve from the Windows host** — mDNS is not working on this network, so scan the subnet or check the router's lease table instead of trusting either the hostname or a hardcoded IP.. Full credential/SSH-key setup (which key, why `plink` doesn't work, the four legacy-algorithm overrides this old Dropbear needs) is documented in [`provisioning/README.md`](provisioning/README.md) — don't re-derive it, read that file.
 
 - **On-device package management:** `opkg update` / `opkg install <pkg>`. Runtimes commonly available: Python, Node.js, plus busybox userland — though nothing currently shipped in this repo actually needs an on-device runtime (`mt7688-mcp-server` is a statically-linked Go binary with `CGO_ENABLED=0`, no interpreter dependency). If future work needs a specific on-device runtime version, pin it here when that happens.
 - **Deploy to board:** see "Run / test / lint" below for the MCP server's real `.\deploy.ps1` command; other code under this side should follow the same `scp`/SSH pattern until/unless it needs something different.
@@ -46,9 +46,18 @@ Access is over SSH; the board default is user `root` at `mylinkit.local` (or `19
 - **Downloading an FPGA bitstream (cross-repo):** `fpga_configure` takes a
   `.bit` path on *this* board's filesystem. The host-side glue that builds
   the bitstream, `scp`s it to `/tmp` and drives the tool over SSH lives in
-  the sister repo as `build.ps1 -Download -Pins <din>,<cclk>,<prog>,<gate>,<done>`
-  (see `docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`).
-  There are deliberately no default pin numbers on either side.
+  the sister repo as `build.ps1 -Download` (add `-DryRun` for a parse-only
+  check). **There is no pin parameter** — the signals come from the ATmega on
+  pins fixed in `atmega-firmware/fpga-download/fpga-download.ino` (D8–D12),
+  because this board has only one free GPIO of its own. Design:
+  `docs/superpowers/specs/2026-08-08-xcs20-download-via-atmega.md`.
+- **Two ATmega firmwares, one Serial1.** `adc-bridge.ino` and
+  `fpga-download.ino` cannot both be flashed; loading one stops the other's
+  tools working (`atmega_adc_read` vs `fpga_configure`). Merging them is
+  listed as future work in the spec above.
+- **Do not flash the ATmega while the FPGA target board is powered.**
+  avrdude resets the chip, which floats the adapter's gate line and can leave
+  /PROGRAM low — harmless but it looks exactly like a dead board.
 
 ## Working on the ATmega32U4 (Arduino) side
 

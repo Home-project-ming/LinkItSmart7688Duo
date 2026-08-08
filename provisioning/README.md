@@ -206,9 +206,15 @@ refused, and cold-cache `grep`/`python3` ran clean. Design:
 ## 06-xcs20/
 
 Bring-up for driving the XCS20 FPGA on the attached 2000-era target board
-over slave serial, through a 74AHCT125 level-shifting adapter into the
+over slave serial, through a 74LS125 level-shifting adapter into the
 board's DB25. Design (wiring, protocol, risk register, stage-by-stage
-procedure): `../docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`.
+procedure): `../docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`,
+with the transport superseded by
+`../docs/superpowers/specs/2026-08-08-xcs20-download-via-atmega.md`.
+
+**`01_manual_probe.sh` here is superseded and cannot work on this board** —
+it drives MT7688 sysfs GPIO, and the download moved to the ATmega because
+the Duo has only one free GPIO. See the banner at the top of the script.
 
 **Nothing here has been run against real hardware yet** — the adapter is
 not built.
