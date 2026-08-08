@@ -3,12 +3,12 @@
     "linkit7688-hw": {
       "command": "ssh",
       "args": [
-        "-i", "D:\\Code\\LinkItSmart7688Duo\\provisioning\\lib\\keys\\board_rsa",
+        "-i", "D:\\LinkItSmart7688Duo\\provisioning\\lib\\keys\\board_rsa",
         "-o", "KexAlgorithms=+diffie-hellman-group14-sha1",
         "-o", "HostKeyAlgorithms=+ssh-rsa",
         "-o", "PubkeyAcceptedAlgorithms=+ssh-rsa",
         "-o", "MACs=+hmac-sha1",
-        "root@192.168.31.156",
+        "root@192.168.50.216",
         "/usr/local/bin/mcp-server"
       ]
     }
