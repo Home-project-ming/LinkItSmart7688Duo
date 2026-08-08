@@ -192,13 +192,16 @@ Result (2026-07-12): **ext4 control 0/20, squashfs 70/70**, all cold-cache.
 | `03_build_image.sh` | Builds `/overlay/opt.sqfs` (27.4 MB from 67.5 MB). Stages mksquashfs + the Entware loader + libs into tmpfs and runs it **from RAM** (the investigation's proven case-b workaround). **Must be `-comp xz`** — this kernel's squashfs has only the xz decompressor; a gzip image is rejected with `Filesystem uses "zlib" compression`. |
 | `04_mount_and_probe.sh` | losetup + mount, then the exact `test_triangulate.sh` probe against identical binaries in both locations: ext4 grep 0/10 / python3 0/10 (history reproduced), squashfs grep 10/10 / python3 10/10, busybox-from-flash sanity 10/10. |
 | `05_soak.sh` | 20 more cold rounds each for grep/python3 plus 10 rounds of a real Python computation with `PYTHONHOME` inside the image: 50/50. |
+| `06_install_boot_hook.sh` | Makes the mount survive a reboot: appends a `losetup` + `mount -t squashfs` block to `/etc/rc.local` ahead of its `exit 0`, keyed on a marker comment so re-running is a no-op (`ALREADY_INSTALLED`). Backs up `rc.local` first, and every failure path only `logger`s and leaves `/opt` writable — a bad image can't cost you the boot or SSH. |
+| `07_opt_maintenance.sh` | The write workflow for a read-only `/opt`. `unlock` unmounts and detaches the loop device to expose the real writable directory for `opkg`; `rebuild` regenerates `/overlay/opt.sqfs` from the current `/opt` and remounts it. `rebuild` refuses to run while `/opt` is still mounted, and stages mksquashfs into tmpfs the same way `03_build_image.sh` does. |
 
 `ipk/` holds the three sideloaded packages (same archive.openwrt.org feed
 and vermagic as `01-sd-extroot/ipk/`).
 
-Not yet done (tracked in `../TODO.md`): making it permanent — mount at
-boot, point `/opt` at the image, and a rebuild-image workflow for after
-`opkg` changes. The loop mount set up here does not survive a reboot.
+Made permanent 2026-07-14 (`06_`/`07_` above): verified by an actual
+`reboot` — `/opt` came back as `squashfs (ro)` unattended, writes were
+refused, and cold-cache `grep`/`python3` ran clean. Design:
+`../docs/superpowers/specs/2026-07-14-squashfs-opt-boot-mount-design.md`.
 
 ## 06-xcs20/
 
