@@ -51,13 +51,30 @@ SD 上 glibc 執行檔)。腳本與側載 ipk 都在
 
 ## 🎯 進行中:XCS20 FPGA slave-serial 下載(2026-07-30 設計完成)
 
-- [ ] 依設計文件實作與 bring-up:
-  `docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`
-  ——用 7688 經 74AHCT125 轉壓接目標板 DB25,GPIO bit-bang slave serial,
-  拔 EPROM 下載(實機驗證過此模式可行,綠燈=成功)。bitstream 格式已
-  三重驗證(MSB-first、header 可變長、promgen=逐 byte 位元反轉)。
-- [ ] 待辦前置:焊 AHCT125 轉接板(BOM 在設計文件 §3)、確認 7688 排針
-  可用腳位(§5)、板子回線上後補唯讀檢查(§10)。
+設計文件:`docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`
+——用 7688 經 74AHCT125 轉壓接目標板 DB25,GPIO bit-bang slave serial,
+拔 EPROM 下載(實機驗證過此模式可行,綠燈=成功)。
+
+**軟體已完成(2026-08-08),硬體與 bring-up 未動。**
+
+- [x] 設計文件 §6.1 `fpga_configure` MCP 工具:`fpga.go`(.bit 容器解析器、
+  slave-serial 時序狀態機、預開 fd 的 sysfs pin driver)+ `fpga_test.go`
+  (33 個單元測試,含兩個真 `.bit` 當 testdata)。全部離線可跑,
+  `go test ./...` 綠、`go vet` 乾淨、mipsle 交叉編譯過。
+- [x] 設計文件 §6.3 host glue:姊妹 repo 的
+  `build.ps1 -Download -Pins <din>,<cclk>,<prog>,<gate>,<done>`——
+  scp `.bit` 到板子 `/tmp`,再用 SSH 上的 JSON-RPC 叫 `fpga_configure`。
+  **五個腳位刻意沒有預設值**(轉接板佈線還沒凍結,猜一組會看起來像權威)。
+- [x] 設計文件 §6.2 bring-up 腳本 `provisioning/06-xcs20/01_manual_probe.sh`
+  ——busybox-only,把 slave-serial 各信號拆成可單步下的子命令
+  (`init`/`status`/`gate`/`set`/`clock`/`pulse-program`/`release`),
+  讓人拿三用電表走完 §7 的第 3、4 階段。擋掉 blocklist 腳位與重複指派,
+  `init`/`release` 都把匯流排閘停在 HIGH(Hi-Z),`pulse-program` 沒能把
+  DONE 清成 0 會 exit 1。已對假 sysfs 樹跑過完整流程與所有錯誤路徑。
+- [ ] **實機 bring-up(§7 全部七階段)**:`fpga_configure` 從未對真板子跑過。
+  前置:焊 AHCT125 轉接板(BOM 在 §3)、用三用電表確認 7688 排針可用腳位
+  (§5,決定 `-Pins` 的值)、板子回線上後補唯讀檢查(§10)。
+  第一次務必先下 `-DryRun`(只解析與驗證,不驅動任何腳位)。
 
 ## 🔌 等硬體到位才能補的驗證缺口
 

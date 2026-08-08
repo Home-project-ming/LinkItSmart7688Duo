@@ -1,0 +1,5 @@
+# Shell scripts in this repo are scp'd to the board and run by busybox ash.
+# With core.autocrlf=true a Windows checkout would give them CRLF endings,
+# and busybox fails on the resulting "#!/bin/sh\r" with a bare
+# "not found" - so pin them to LF in the working tree on every platform.
+*.sh text eol=lf

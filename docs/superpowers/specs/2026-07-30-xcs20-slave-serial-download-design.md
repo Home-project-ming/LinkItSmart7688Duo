@@ -6,7 +6,10 @@
 XCS20-4-PQ208 (original Spartan, 1998) on a year-2000 development board
 directly from the 7688 Duo, replacing the PC parallel port the board was
 designed for. The bitstream comes from the already-working ISE 4.2i
-toolchain at `d:\Code\FPGA_XCS20\outputs` (`.\build.ps1 -Design <n> -Synth`).
+toolchain at `d:\LEAP_FPT_2_Xilinx_XCS20\build` (`.\build.ps1 -Design <n>
+-Synth`) — the working copy of the [FPGA_XCS20
+repo](https://github.com/MingChihLung/FPGA_XCS20); the local directory
+name and the repo name differ.
 
 Every claim below is labeled: **[schematic]** read off the sheets in
 `docs/*.jpeg`, **[verified]** proven by running code in this session,

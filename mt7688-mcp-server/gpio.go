@@ -11,7 +11,11 @@ import (
 	"syscall"
 )
 
-const gpioSysfsPath = "/sys/class/gpio"
+// gpioSysfsPath is a var (not a const) so tests can point it at a temp
+// directory holding a fake sysfs tree, exercising the export/direction/
+// value plumbing without real hardware - same test-seam rationale as
+// spiDevGlob in spi.go. Nothing in production ever reassigns it.
+var gpioSysfsPath = "/sys/class/gpio"
 
 // exportGPIO exports pin via the sysfs GPIO ABI. It is idempotent even
 // under concurrent invocation: each MCP client session is a separate OS

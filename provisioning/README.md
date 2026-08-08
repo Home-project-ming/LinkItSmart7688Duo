@@ -199,3 +199,25 @@ and vermagic as `01-sd-extroot/ipk/`).
 Not yet done (tracked in `../TODO.md`): making it permanent — mount at
 boot, point `/opt` at the image, and a rebuild-image workflow for after
 `opkg` changes. The loop mount set up here does not survive a reboot.
+
+## 06-xcs20/
+
+Bring-up for driving the XCS20 FPGA on the attached 2000-era target board
+over slave serial, through a 74AHCT125 level-shifting adapter into the
+board's DB25. Design (wiring, protocol, risk register, stage-by-stage
+procedure): `../docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`.
+
+**Nothing here has been run against real hardware yet** — the adapter is
+not built.
+
+| Script | What it does |
+|---|---|
+| `01_manual_probe.sh` | Single-steps the slave-serial signals so a human with a DMM can walk stages 3-4 of the design doc before any Go code runs. busybox-only. Subcommands: `init` / `status` / `gate on\|off` / `set din\|cclk\|prog 0\|1` / `clock N [SEC]` / `pulse-program` / `release`. Refuses blocklisted or duplicated pins, parks the buffer gate high (Hi-Z) on `init` and `release`, and exits non-zero if `pulse-program` fails to clear DONE. |
+
+The actual download is the `fpga_configure` MCP tool
+(`../mt7688-mcp-server/fpga.go`), driven from the host by the sister
+repo's `build.ps1 -Download`. Order on the bench: `01_manual_probe.sh`
+stages first, then `-Download -DryRun`, then a real download.
+
+Pin numbers are arguments everywhere, never constants — which 7688 GPIOs
+reach the physical header still has to be confirmed with a meter.

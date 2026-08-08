@@ -4,7 +4,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **Status: active.** The MT7688-side MCP server (`mt7688-mcp-server/`, 13 tools: GPIO/I2C/SPI/PWM/UART/I2S/ATmega bridge) and the ATmega32U4-side Arduino firmware (`atmega-firmware/`) are both implemented, deployed, and live-verified against real hardware — see [`README.md`](README.md) for the current status summary. The sections below document the *board architecture* (durable, load-bearing context) and the *standard toolchains*. A few sections are still marked **TODO** where genuinely nothing in this repo has needed that capability yet (e.g. raw MIPS C cross-compilation) — don't invent commands for those; confirm against actual files first if/when that work starts.
+> **Status: active.** The MT7688-side MCP server (`mt7688-mcp-server/`, 14 tools: GPIO/I2C/SPI/PWM/UART/I2S/ATmega bridge/FPGA) and the ATmega32U4-side Arduino firmware (`atmega-firmware/`) are both implemented and deployed; all but the newest tool are live-verified against real hardware — see [`README.md`](README.md) for the current status summary. **`fpga_configure` is the exception: implemented and unit-tested, never yet run against the target board** (the 74AHCT125 adapter it needs does not exist yet). Do not describe it as verified. The sections below document the *board architecture* (durable, load-bearing context) and the *standard toolchains*. A few sections are still marked **TODO** where genuinely nothing in this repo has needed that capability yet (e.g. raw MIPS C cross-compilation) — don't invent commands for those; confirm against actual files first if/when that work starts.
 
 ## What this board is
 
@@ -37,6 +37,18 @@ Access is over SSH; the board default is user `root` at `mylinkit.local` (or `19
   - Test: `go test ./...` (single test: `go test ./... -run TestName -v`)
   - Build for the board: `.\build.ps1` (cross-compiles `GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0`)
   - Deploy: `.\deploy.ps1` (ships to `/usr/local/bin/mcp-server` via `scp -O`)
+  - Exercise a tool without an MCP client: pipe newline-delimited JSON-RPC
+    (`initialize`, `notifications/initialized`, `tools/call`) into the server
+    on stdin. **Keep stdin open until the reply is read** — the server tears
+    the session down at EOF and drops in-flight replies, so
+    `mcp-server < requests.json` returns nothing at all. From a shell:
+    `{ cat requests.jsonl; sleep 5; } | ./mcp-server`.
+- **Downloading an FPGA bitstream (cross-repo):** `fpga_configure` takes a
+  `.bit` path on *this* board's filesystem. The host-side glue that builds
+  the bitstream, `scp`s it to `/tmp` and drives the tool over SSH lives in
+  the sister repo as `build.ps1 -Download -Pins <din>,<cclk>,<prog>,<gate>,<done>`
+  (see `docs/superpowers/specs/2026-07-30-xcs20-slave-serial-download-design.md`).
+  There are deliberately no default pin numbers on either side.
 
 ## Working on the ATmega32U4 (Arduino) side
 
