@@ -143,13 +143,13 @@ func ParseBitstream(data []byte) (*Bitstream, error) {
 }
 
 // FPGAPins maps each slave-serial signal to the 7688 GPIO that drives
-// it through the 74AHCT125 level-shifting adapter.
+// it through the 74LS125 level-shifting adapter.
 //
-// These are tool inputs rather than constants on purpose: the adapter
-// wiring is not frozen yet, and which candidate GPIOs actually reach the
-// Duo's physical header still has to be confirmed against the vendor
-// pin-out and a DMM. Freezing a guess here would make a wrong default
-// look authoritative.
+// NOT reachable from the fpga_configure tool any more. This board cannot
+// spare five GPIOs -- the Duo breaks out P1, P8 and P9, and P8/P9 are the
+// console UART -- so the download runs on the ATmega instead (see
+// fpga_bridge.go). This type and sysfsPort below are kept, tested, for a
+// board that does have the pins.
 type FPGAPins struct {
 	DIN     int `json:"din" jsonschema:"GPIO driving DB25 pin 2 (PD0 / DIN)"`
 	CCLK    int `json:"cclk" jsonschema:"GPIO driving DB25 pin 3 (PD1 / CCLK)"`
@@ -322,17 +322,17 @@ type FPGAConfigureResult struct {
 
 // ConfigureFPGA reads a .bit from the local filesystem (scp'd to the
 // board's tmpfs by the host-side caller), checks it is for this part,
-// and streams it into the FPGA.
+// and streams it into the FPGA through the ATmega bridge.
+//
+// There is no pin parameter. The signals are driven by the ATmega, not
+// this chip, on pins its firmware has hardcoded (see fpga-download.ino)
+// -- the Duo has only one free GPIO of its own, which is what pushed the
+// download onto the bridge in the first place. See fpga_bridge.go.
 //
 // dryRun stops after parsing and validation: it reports what would be
-// sent without exporting or driving a single GPIO, which is the safe
-// first call while the adapter wiring is still being brought up.
-func ConfigureFPGA(bitPath string, pins FPGAPins, dryRun, force bool) (*FPGAConfigureResult, error) {
-	// Pins are validated before the file is even read, so a wiring typo
-	// reports as a wiring typo rather than hiding behind a file error.
-	if err := validateFPGAPins(pins); err != nil {
-		return nil, err
-	}
+// sent without touching the bridge or driving a single pin, which is the
+// safe first call while the adapter wiring is still being brought up.
+func ConfigureFPGA(bitPath string, dryRun, force bool) (*FPGAConfigureResult, error) {
 	data, err := os.ReadFile(bitPath)
 	if err != nil {
 		return nil, fmt.Errorf("read bitstream: %w", err)
@@ -355,14 +355,14 @@ func ConfigureFPGA(bitPath string, pins FPGAPins, dryRun, force bool) (*FPGAConf
 		return res, nil
 	}
 
-	port, err := openSysfsPort(pins)
+	stream, err := openAtmegaStream()
 	if err != nil {
 		return nil, err
 	}
-	defer port.Close()
+	defer stream.Close()
 
 	start := time.Now()
-	done, err := ConfigureSlaveSerial(port, bs.Payload)
+	done, err := ConfigureViaATmega(stream, bs.Payload)
 	if err != nil {
 		return nil, err
 	}

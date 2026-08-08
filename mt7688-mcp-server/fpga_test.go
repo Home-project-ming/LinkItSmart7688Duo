@@ -507,7 +507,7 @@ func writeTempBit(t *testing.T, data []byte) string {
 func TestConfigureFPGA_DryRunReportsHeaderWithoutDrivingPins(t *testing.T) {
 	path := writeTempBit(t, readTestBit(t, "blink.bit"))
 
-	res, err := ConfigureFPGA(path, testPins(), true, false)
+	res, err := ConfigureFPGA(path, true, false)
 	if err != nil {
 		t.Fatalf("expected nil error, got %v", err)
 	}
@@ -533,7 +533,7 @@ func TestConfigureFPGA_DryRunReportsHeaderWithoutDrivingPins(t *testing.T) {
 func TestConfigureFPGA_RejectsWrongPart(t *testing.T) {
 	path := writeTempBit(t, makeBit("other_par.ncd", "s30pq208", make([]byte, 16)))
 
-	_, err := ConfigureFPGA(path, testPins(), true, false)
+	_, err := ConfigureFPGA(path, true, false)
 	if err == nil {
 		t.Fatal("expected an error for a bitstream built for another part, got nil")
 	}
@@ -545,7 +545,7 @@ func TestConfigureFPGA_RejectsWrongPart(t *testing.T) {
 func TestConfigureFPGA_WrongPartAllowedWithForce(t *testing.T) {
 	path := writeTempBit(t, makeBit("other_par.ncd", "s30pq208", make([]byte, 16)))
 
-	res, err := ConfigureFPGA(path, testPins(), true, true)
+	res, err := ConfigureFPGA(path, true, true)
 	if err != nil {
 		t.Fatalf("expected force to override the part check, got %v", err)
 	}
@@ -557,20 +557,8 @@ func TestConfigureFPGA_WrongPartAllowedWithForce(t *testing.T) {
 func TestConfigureFPGA_MissingFile(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "nope.bit")
 
-	if _, err := ConfigureFPGA(path, testPins(), true, false); err == nil {
+	if _, err := ConfigureFPGA(path, true, false); err == nil {
 		t.Fatal("expected an error for a missing .bit, got nil")
-	}
-}
-
-// Pin validation must not wait until the bitstream has been read and
-// accepted -- a typo'd pin should fail the same way in a dry run.
-func TestConfigureFPGA_DryRunValidatesPins(t *testing.T) {
-	path := writeTempBit(t, readTestBit(t, "top.bit"))
-	pins := testPins()
-	pins.Done = pins.DIN
-
-	if _, err := ConfigureFPGA(path, pins, true, false); err == nil {
-		t.Fatal("expected an error for duplicate pins in a dry run, got nil")
 	}
 }
 

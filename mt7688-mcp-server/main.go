@@ -271,10 +271,9 @@ func atmegaBridgeRawHandler(ctx context.Context, req *mcp.CallToolRequest, input
 }
 
 type FPGAConfigureInput struct {
-	BitPath string   `json:"bit_path" jsonschema:"path to a .bit file already on the board (scp it to /tmp first; 22KB for an XCS20)"`
-	Pins    FPGAPins `json:"pins" jsonschema:"which GPIO drives each slave-serial signal; all five are required because the adapter wiring is not frozen"`
-	DryRun  bool     `json:"dry_run" jsonschema:"parse and validate only: report the bitstream's part/design/length without exporting or driving any GPIO"`
-	Force   bool     `json:"force" jsonschema:"stream the bitstream even if its part name is not the board's XCS20 (s20pq208)"`
+	BitPath string `json:"bit_path" jsonschema:"path to a .bit file already on the board (scp it to /tmp first; 22KB for an XCS20)"`
+	DryRun  bool   `json:"dry_run" jsonschema:"parse and validate only: report the bitstream's part/design/length without touching the bridge or driving any pin"`
+	Force   bool   `json:"force" jsonschema:"stream the bitstream even if its part name is not the board's XCS20 (s20pq208)"`
 }
 type FPGAConfigureOutput struct {
 	Done   bool   `json:"done" jsonschema:"true if the FPGA's DONE pin came up, i.e. the bitstream was accepted"`
@@ -286,7 +285,7 @@ type FPGAConfigureOutput struct {
 }
 
 func fpgaConfigureHandler(ctx context.Context, req *mcp.CallToolRequest, input FPGAConfigureInput) (*mcp.CallToolResult, FPGAConfigureOutput, error) {
-	res, err := ConfigureFPGA(input.BitPath, input.Pins, input.DryRun, input.Force)
+	res, err := ConfigureFPGA(input.BitPath, input.DryRun, input.Force)
 	if err != nil {
 		return nil, FPGAConfigureOutput{}, err
 	}
@@ -316,7 +315,7 @@ func main() {
 	mcp.AddTool(server, &mcp.Tool{Name: "i2s_play", Description: "Play a WAV audio clip through the board's speaker/headphone output. Blocks until playback completes. Max 100000 bytes of decoded WAV data (roughly 6 seconds at 8kHz mono). Recording is not available - the board's capture path has a confirmed driver-level bug that hangs the device."}, i2sPlayHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "atmega_adc_read", Description: "Read one analog channel (0-11, A0-A11) from the ATmega32U4 side over the UART bridge (/dev/ttyS0), using the Firmata REPORT_ANALOG/ANALOG_MESSAGE protocol. Blocks until a reading for that channel arrives or timeout_ms elapses."}, atmegaADCReadHandler)
 	mcp.AddTool(server, &mcp.Tool{Name: "atmega_bridge_raw", Description: "Send raw bytes to the ATmega32U4 over the UART bridge (/dev/ttyS0, fixed 57600 baud) and read back whatever arrives within timeout_ms. Low-level escape hatch for speaking Firmata (or any future ATmega firmware protocol) directly; most callers should use atmega_adc_read instead."}, atmegaBridgeRawHandler)
-	mcp.AddTool(server, &mcp.Tool{Name: "fpga_configure", Description: "Download a Xilinx .bit file into the XCS20 FPGA on the attached target board over slave serial, by bit-banging GPIO through the 74AHCT125 level-shifting adapter into the board's DB25. The .bit must already be on this board's filesystem (scp it to /tmp). All five pins are required; there are no defaults, because the adapter wiring is still being brought up. Returns done=true if the FPGA accepted the bitstream. Use dry_run first to check the file parses and the pins are legal without driving anything."}, fpgaConfigureHandler)
+	mcp.AddTool(server, &mcp.Tool{Name: "fpga_configure", Description: "Download a Xilinx .bit file into the XCS20 FPGA on the attached target board over slave serial. The bitstream is streamed to the ATmega32U4 over the UART bridge in 49-byte Firmata SysEx chunks, and the ATmega clocks it through the 74LS125 level-shifting adapter into the board's DB25. There is no pin parameter: the signals come from the ATmega on pins its firmware has hardcoded (D8-D12), because the 7688 itself has only one free GPIO. The .bit must already be on this board's filesystem (scp it to /tmp; 22KB for an XCS20). Takes roughly 5 seconds. Returns done=true if the FPGA accepted the bitstream. Use dry_run first to check the file parses without driving anything."}, fpgaConfigureHandler)
 
 	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
 		log.Fatal(err)
