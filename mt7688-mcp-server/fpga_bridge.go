@@ -183,23 +183,58 @@ func fpgaStatusText(code byte) string {
 // F7). Layout: 7E <sub> <status> <done> <n0> <n1> <n2> <n3>, with the
 // count in four 7-bit groups, little-endian, because SysEx bytes cannot
 // carry bit 7.
+// fpgaReplyFields is the number of logical bytes sendStatus passes to
+// Firmata.sendSysex: sub, status, done, and four groups of the count.
+const fpgaReplyFields = 7
+
+// parseReply decodes the body between F0 and F7.
+//
+// Firmata.sendSysex splits every payload byte into TWO 7-bit bytes, LSB
+// first, because SysEx data cannot carry bit 7. So sendStatus's seven bytes
+// arrive as fourteen, and reading them as plain bytes shifts every field by
+// one: a NOT_STREAMING/done=false reply decodes as status OK with DONE
+// asserted. That is a false success on the one question this tool exists to
+// answer, so it is worth the extra loop.
+//
+// Caught against real hardware 2026-08-09, after a version of this function
+// that read the fields directly passed its unit tests -- the fixtures had
+// been hand-built with the same wrong assumption. TestParseReplyOnCaptured
+// FirmwareBytes now pins the real wire format.
 func parseReply(body []byte) (*fpgaReply, error) {
-	if len(body) < 8 {
-		return nil, fmt.Errorf("short SysEx reply: %d bytes, want 8", len(body))
+	if len(body) < 1 {
+		return nil, fmt.Errorf("empty SysEx reply")
 	}
 	if body[0] != sysexFPGA {
 		return nil, fmt.Errorf("SysEx reply for command 0x%02x, want 0x%02x", body[0], sysexFPGA)
 	}
+	enc := body[1:]
+	if len(enc) < 2*fpgaReplyFields {
+		return nil, fmt.Errorf("short SysEx reply: %d data bytes, want %d (7 fields as 2x7-bit pairs)", len(enc), 2*fpgaReplyFields)
+	}
+	var f [fpgaReplyFields]byte
+	for i := range f {
+		f[i] = (enc[2*i] & 0x7F) | (enc[2*i+1]&0x01)<<7
+	}
 	var n uint32
 	for i := range 4 {
-		n |= uint32(body[4+i]&0x7F) << uint(7*i)
+		n |= uint32(f[3+i]&0x7F) << uint(7*i)
 	}
 	return &fpgaReply{
-		Sub:      body[1],
-		Status:   body[2],
-		Done:     body[3] != 0,
+		Sub:      f[0],
+		Status:   f[1],
+		Done:     f[2] != 0,
 		Received: n,
 	}, nil
+}
+
+// encodeReplyFields mirrors Firmata.sendSysex's 2x7-bit split. Tests and the
+// fake stream build replies with it so a fixture cannot drift from the wire.
+func encodeReplyFields(f ...byte) []byte {
+	out := make([]byte, 0, 2*len(f))
+	for _, b := range f {
+		out = append(out, b&0x7F, b>>7)
+	}
+	return out
 }
 
 // Timeouts. BEGIN covers the firmware's own 10ms /PROGRAM hold plus the

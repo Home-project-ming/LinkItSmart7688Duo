@@ -153,8 +153,8 @@ func TestParseReplyDecodesSplitCount(t *testing.T) {
 	// 22,268 does not fit in 7 bits, so the count travels as four 7-bit
 	// groups; a parser that reads it as plain bytes gets a wrong answer.
 	const n = 22268
-	body := []byte{sysexFPGA, fpgaSubEnd, fpgaStatusOK, 1,
-		byte(n & 0x7F), byte((n >> 7) & 0x7F), byte((n >> 14) & 0x7F), byte((n >> 21) & 0x7F)}
+	body := append([]byte{sysexFPGA}, encodeReplyFields(fpgaSubEnd, fpgaStatusOK, 1,
+		byte(n&0x7F), byte((n>>7)&0x7F), byte((n>>14)&0x7F), byte((n>>21)&0x7F))...)
 
 	reply, err := parseReply(body)
 	if err != nil {
@@ -168,8 +168,38 @@ func TestParseReplyDecodesSplitCount(t *testing.T) {
 	}
 }
 
+// TestParseReplyOnCapturedFirmwareBytes pins the format against reality.
+//
+// These are the exact bytes the flashed ATmega put on the bridge on
+// 2026-08-09 in reply to an END sent while not streaming (F0 7E 03 F7),
+// read back through atmega_bridge_raw. The F7 fell outside the read window,
+// which does not matter: takeSysex hands parseReply the body only.
+//
+// The previous parser read these as status=OK, done=true -- a clean success
+// for a reply that actually says "you never sent a BEGIN".
+func TestParseReplyOnCapturedFirmwareBytes(t *testing.T) {
+	body := []byte{0x7E, 0x03, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+
+	reply, err := parseReply(body)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if reply.Sub != fpgaSubEnd {
+		t.Errorf("Sub = 0x%02x, want 0x%02x", reply.Sub, fpgaSubEnd)
+	}
+	if reply.Status != fpgaStatusNotStreaming {
+		t.Errorf("Status = 0x%02x, want 0x%02x (NOT_STREAMING)", reply.Status, fpgaStatusNotStreaming)
+	}
+	if reply.Done {
+		t.Error("Done = true; the firmware reported false and a false success here is the whole bug")
+	}
+	if reply.Received != 0 {
+		t.Errorf("Received = %d, want 0", reply.Received)
+	}
+}
+
 func TestParseReplyRejectsShortBody(t *testing.T) {
-	if _, err := parseReply([]byte{sysexFPGA, fpgaSubEnd}); err == nil {
+	if _, err := parseReply(append([]byte{sysexFPGA}, encodeReplyFields(fpgaSubEnd, fpgaStatusOK)...)); err == nil {
 		t.Fatal("expected an error for a truncated reply")
 	}
 }
@@ -210,8 +240,11 @@ func (f *fakeStream) ReadSysex(time.Duration) ([]byte, error) {
 	if f.done && sub == fpgaSubEnd {
 		done = 1
 	}
-	return []byte{sysexFPGA, sub, status, done,
-		byte(n & 0x7F), byte((n >> 7) & 0x7F), byte((n >> 14) & 0x7F), byte((n >> 21) & 0x7F)}, nil
+	// Built through encodeReplyFields, not hand-packed: an earlier version
+	// of this fixture laid the fields out flat, which is not what
+	// Firmata.sendSysex puts on the wire, and it hid a real parser bug.
+	return append([]byte{sysexFPGA}, encodeReplyFields(sub, status, done,
+		byte(n&0x7F), byte((n>>7)&0x7F), byte((n>>14)&0x7F), byte((n>>21)&0x7F))...), nil
 }
 
 func (f *fakeStream) Close() error { f.closed = true; return nil }

@@ -147,13 +147,27 @@ static void doData(byte *argv, byte argc) {
 
   byte *enc = argv + 1;
   byte payload[CHUNK_MAX];
-  memset(payload, 0, n);
-  // Mirror of encode7bit in fpga_bridge.go: a dense MSB-first bit
-  // stream, 7 bits per wire byte, rather than Firmata's usual
-  // one-byte-per-nibble scheme that would double the transfer.
-  for (uint16_t bit = 0; bit < (uint16_t)n * 8; bit++) {
-    byte v = (enc[bit / 7] >> (6 - (bit % 7))) & 1;
-    payload[bit / 8] |= v << (7 - (bit % 8));
+
+  // Mirror of encode7bit in fpga_bridge.go: a dense MSB-first bit stream,
+  // 7 bits per wire byte, rather than Firmata's usual one-byte-per-nibble
+  // scheme that would double the transfer.
+  //
+  // Shift accumulator, NOT a per-bit `enc[bit/7] >> (6 - bit%7)`. The AVR
+  // has no divider, so /7 and %7 are software routines: at 392 bits per
+  // chunk that cost ~8ms on this 8MHz part, against the 10.6ms a chunk
+  // takes to arrive at 57600. Two chunks of jitter overflowed the 64-byte
+  // UART buffer, the SysEx framing desynced, and every later chunk was
+  // silently dropped -- observed as a download that stopped counting at
+  // 11,172 of 22,268 bytes. This version is shifts only, ~0.06ms.
+  uint16_t acc = 0;
+  byte accBits = 0, out = 0;
+  for (byte i = 0; i < encodedLen; i++) {
+    acc = (uint16_t)(acc << 7) | (enc[i] & 0x7F);
+    accBits += 7;
+    while (accBits >= 8 && out < n) {
+      accBits -= 8;
+      payload[out++] = (byte)(acc >> accBits);
+    }
   }
 
   for (byte i = 0; i < n; i++) {
