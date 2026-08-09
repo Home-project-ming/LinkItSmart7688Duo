@@ -2,8 +2,13 @@
 
 # XCS20 slave-serial download via the ATmega bridge — implementation
 
-Status: **implemented and unit-tested; never run against the FPGA.**
-Date: 2026-08-08
+Status: **working on real hardware, design running.** 2026-08-09: `top.bit`
+downloaded in 4,888 ms with DONE asserted (within 2% of the 4.8s predicted
+here), and `blinkio0.bit` then ran a counter off the on-chip oscillator,
+blinking an LED at 0.479 Hz — a 1998 part executing logic synthesised in
+2026. Three bugs had to be fixed first; all are in "Gotchas" below, and each
+one had passed every check that was supposed to catch it.
+Date: 2026-08-08 (verified 2026-08-09)
 
 Supersedes §5 ("7688-side transport choice") of
 `2026-07-30-xcs20-slave-serial-download-design.md`. Everything else in
@@ -67,9 +72,12 @@ installed `FirmataConstants.h`), and a DATA message spends 3 bytes on
 command/subcommand/length. 49 raw bytes encode to exactly 56 (49×8 = 392
 = 56×7, no padding), which fits with room to spare.
 
-**DATA is not acknowledged.** A 60-byte chunk takes ~10ms to arrive at
-57600 baud and well under 1ms to clock out, so the firmware is never the
-bottleneck and a per-chunk round trip would only add latency. Loss is
+**DATA is not acknowledged.** A 61-byte chunk takes ~10.6ms to arrive at
+57600 baud. Clocking it out takes ~0.5ms, but only once the unpacking is
+written with shifts — the first version used `bit/7` and `bit%7` per bit,
+which on a divider-less 8MHz AVR cost ~8ms and left the firmware barely
+keeping up. See gotcha 12. With that fixed there is roughly 10x of headroom
+and a per-chunk round trip would only add latency. Loss is
 caught at the end instead: the firmware counts payload bytes and END
 reports the total, which the host compares against what it sent. A short
 count is reported as lost chunks, **not** as `done=false` — otherwise a
@@ -209,6 +217,88 @@ Recorded because each one cost real time today.
     both own Serial1; flashing one displaces the other, so
     `atmega_adc_read` stops working while download firmware is loaded.
     Merging them is listed below as future work.
+
+12. **The AVR has no divider, and `%7` per bit ate the timing budget.**
+    The first `doData` unpacked with `enc[bit/7] >> (6 - bit%7)`. Software
+    division at 392 bits per chunk is ~8ms on this 8MHz part, against the
+    10.6ms a chunk takes to arrive — a few percent of headroom, not the
+    25x an earlier draft of this document claimed. The 64-byte UART buffer
+    overflowed, SysEx framing desynced, and every later chunk was dropped.
+
+    The symptom was clean and worth recognising: END timed out, and
+    probing the firmware afterwards reported **11,172 bytes received =
+    228 × 49**, a halt at almost exactly half of the 455 chunks. A
+    partial, round multiple of the chunk size means the firmware stopped
+    parsing — not that the adapter is miswired.
+
+    Fixed with a shift accumulator (~0.06ms). Equivalence to the old
+    unpacking was checked for every length 1–49 before spending a flash
+    cycle.
+
+13. **Firmata's `sendSysex` splits every byte into two 7-bit bytes.** The
+    reply parser read the fields flat, so each one landed a position
+    early: a `NOT_STREAMING`/`done=false` reply decoded as **status OK
+    with DONE asserted**. A false success on the one question this tool
+    exists to answer.
+
+    Its unit tests passed throughout, because the fixtures were
+    hand-built with the same wrong assumption. Fixture and parser now
+    share `encodeReplyFields`, and
+    `TestParseReplyOnCapturedFirmwareBytes` pins the format to bytes
+    actually captured off the board.
+
+    General lesson, and the reason both of these survived to bring-up: a
+    test written from the same belief as the code under test proves the
+    belief is self-consistent, not that it is true. Anything describing a
+    wire format needs one fixture taken from the wire.
+
+14. **Board I/O numbers are not package pin numbers, and nothing will tell
+    you.** This cost more than the rest of the session combined.
+
+    UCF `LOC` takes **package pins** — `P1`–`P208` on a PQ208. The FPT-2's
+    connector is labelled with **I/O indices**, and the two do not line up:
+    the board's "I/O 0" is package pin **P2**. (P1 is GND; the user I/O in
+    package order run P2, P3, P4, P5, P8, P9, … — 156 of them, which is why
+    a board label above 160 cannot be an I/O index at all.)
+
+    Given `LOC = "P180"` the tools do exactly as told: P180 is a real user
+    I/O, PAR routes it, DRC passes, bitgen writes a bitstream, the download
+    succeeds and DONE rises. The design simply drives a pin nobody is
+    watching. There is no error to notice.
+
+    What made it expensive was not the mistake but what was built on top of
+    it. "The LED does not blink" became "the counter is frozen", then "GSR
+    is held", then "OSC4 does not oscillate" — four rounds of bisection, a
+    supporting theory for every reading, and eventually a plan to solder in
+    an external clock. **All of it downstream of an indicator wired to a pin
+    the design never touched.** OSC4 had been working the whole time.
+
+    The step that would have collapsed it on the first try: **hold the pin
+    at a hard constant and confirm the indicator responds, before
+    interpreting anything dynamic.** `build/io0low.v` in the FPGA_XCS20 repo
+    does exactly that and is worth keeping for the next unknown pin.
+
+    A meter made it worse, not better. Readings of 0.15V, 0.67V, "about 2V",
+    0V, 1.5V, 5V were all taken from a pin that was floating or from a
+    damaged LED, and each one got a theory attached to it. A DMM averages
+    over ~100ms; against a signal of unknown frequency and duty it returns a
+    number that cannot be interpreted. The LED — blinks or does not — was
+    the better instrument as soon as it was wired to the right pin.
+
+15. **OSC4 works; no external clock is needed.** The 2026-07-30 design said
+    so and was right, though its evidence (`Number of OSC: 1 out of 1` in
+    the MAP report) never justified the claim — that line proves the tool
+    allocated the resource, not that the silicon oscillates. Now confirmed
+    the only way it can be: a counter clocked from F490 blinking an LED at
+    the predicted rate.
+
+    Drive it through a **`BUFGS`**. `verilog2edif.py` inserts a global
+    buffer for a clock arriving on a top-level *port*, but OSC4 is a
+    blackbox instance and its output is just an internal net, so nothing
+    recognises it as a clock. Whether the fabric would carry it without one
+    was never isolated — the pin error masked every result either way — but
+    the dedicated clock network is where an oscillator output belongs, and
+    `blinkio0.v` uses it.
 
 ## Testing
 
