@@ -179,11 +179,31 @@ Recorded because each one cost real time today.
 9. **`/tmp` on the board is tmpfs and gets cleared.** `scp` the `.hex`
    immediately before flashing, with no troubleshooting in between.
 
-10. **Wait a minute or two after the board boots.** Runs at uptime 1–4
-    minutes died with SIGILL/SIGSEGV/exit 2; the same binaries run clean
-    once it settles. The rootfs is an SD-backed extroot, and executing a
-    7MB binary while boot I/O is still heavy is the likely cause. This is
-    a hypothesis that fits every observation, not a proven root cause.
+10. **Read `mcp-server` before executing it, or it faults.** Launch it as
+    `cat /usr/local/bin/mcp-server >/dev/null 2>&1; exec /usr/local/bin/mcp-server`
+    — both `.mcp.json` files and `build.ps1` already do.
+
+    Demand-paging this 7MB binary off the SD-backed overlayfs
+    (`/dev/mmcblk0p1`, ext4 under overlayfs, kernel 3.18) hands the CPU
+    garbage. Reading the whole file through the ordinary read path first
+    populates the page cache correctly; `exec` then maps good pages.
+
+    Reproduced on demand, 2026-08-09:
+
+    | page cache | 4 consecutive runs |
+    |---|---|
+    | warm | `0 0 0 0` |
+    | dropped, exec straight away | `139 132 132 2` (SIGSEGV, SIGILL ×2) |
+    | dropped, `cat` first | `0 0 0 0` |
+
+    This supersedes an earlier note here that said to wait a minute or two
+    after boot. Waiting appears to work only because something else reads
+    the file in the meantime; uptime is not the variable, and a cold cache
+    on a long-uptime board fails exactly the same way. Nothing is wrong
+    with the binary — both the July and August builds behave identically.
+
+    It matters most for a download: a fault partway through 4.8s of
+    streaming would look like a wiring problem, not a paging one.
 
 11. **One firmware at a time.** `adc-bridge.ino` and `fpga-download.ino`
     both own Serial1; flashing one displaces the other, so

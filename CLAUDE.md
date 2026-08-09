@@ -28,7 +28,23 @@ The LinkIt Smart 7688 **Duo** carries **two independent processors** that talk t
 
 ## Working on the MT7688 (Linux/OpenWrt) side
 
-Access is over SSH; the board default is user `root` at `mylinkit.local` (or `192.168.100.1` when the board is its own AP), confirmed live host `192.168.50.216` (2026-08-08; it had moved to `192.168.31.156` for a while and came back — this is DHCP-assigned and will move again). **`ping -4 mylinkit.local` does not resolve from the Windows host** — mDNS is not working on this network, so scan the subnet or check the router's lease table instead of trusting either the hostname or a hardcoded IP.. Full credential/SSH-key setup (which key, why `plink` doesn't work, the four legacy-algorithm overrides this old Dropbear needs) is documented in [`provisioning/README.md`](provisioning/README.md) — don't re-derive it, read that file.
+Access is over SSH; the board default is user `root` at `mylinkit.local` (or `192.168.100.1` when the board is its own AP), live host `192.168.50.249` as of 2026-08-09.
+
+**The address moves, and the reason is structural, so do not just patch the
+number when it breaks.** The board has two network interfaces and each takes
+its own DHCP lease: `br-lan`/`eth0` (wired, MAC `9C:65:F9:1D:6A:92`) and
+`apcli0` (Wi-Fi station, MAC `9E:65:F9:0D:75:AA`). Unplug the Ethernet and
+`br-lan` simply has no address — the wired `.216` did not "change" to the
+wireless `.249`, they are different interfaces. It has also been on a
+different subnet entirely (`192.168.31.156`) on another router.
+
+Every script takes `$env:LINKIT7688_IP` as an override, so a moved board is
+one environment variable rather than an edit in five files. **`ping -4
+mylinkit.local` does not resolve from the Windows host** — mDNS is not
+working here, so scan the subnet or read the router's lease table. A DHCP
+reservation on the MACs above would end this for good.
+
+Full credential/SSH-key setup (which key, why `plink` doesn't work, the four legacy-algorithm overrides this old Dropbear needs) is documented in [`provisioning/README.md`](provisioning/README.md) — don't re-derive it, read that file.
 
 - **On-device package management:** `opkg update` / `opkg install <pkg>`. Runtimes commonly available: Python, Node.js, plus busybox userland — though nothing currently shipped in this repo actually needs an on-device runtime (`mt7688-mcp-server` is a statically-linked Go binary with `CGO_ENABLED=0`, no interpreter dependency). If future work needs a specific on-device runtime version, pin it here when that happens.
 - **Deploy to board:** see "Run / test / lint" below for the MCP server's real `.\deploy.ps1` command; other code under this side should follow the same `scp`/SSH pattern until/unless it needs something different.
@@ -55,6 +71,15 @@ Access is over SSH; the board default is user `root` at `mylinkit.local` (or `19
   `fpga-download.ino` cannot both be flashed; loading one stops the other's
   tools working (`atmega_adc_read` vs `fpga_configure`). Merging them is
   listed as future work in the spec above.
+- **Always launch `mcp-server` as `cat /usr/local/bin/mcp-server >/dev/null
+  2>&1; exec /usr/local/bin/mcp-server`.** Demand-paging the 7MB binary off
+  the SD-backed overlayfs returns corrupt pages: from a cold page cache it
+  dies with SIGILL/SIGSEGV/exit 2 every time, and runs clean every time if
+  the file is read first (reproduced with `drop_caches`, 2026-08-09). Both
+  `.mcp.json` files and `build.ps1` already do this; anything new that
+  execs it directly will hit the fault. The binary is fine — do not go
+  rebuilding it, as was tried once before believing this was a softfloat
+  problem.
 - **Do not flash the ATmega while the FPGA target board is powered.**
   avrdude resets the chip, which floats the adapter's gate line and can leave
   /PROGRAM low — harmless but it looks exactly like a dead board.

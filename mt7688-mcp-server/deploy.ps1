@@ -14,7 +14,10 @@
 # (confirmed via `ssh -G ... | Select-String macs`) - hence MACs=+hmac-sha1
 # alongside the Kex/HostKey/Pubkey algorithm overrides below.
 param(
-    [string] $BoardHost = '192.168.31.156',
+    # DHCP-assigned, and the wired and wireless interfaces get different
+    # leases -- $env:LINKIT7688_IP wins so a moved board is one env var, not
+    # an edit here and in every sibling script.
+    [string] $BoardHost = $(if ($env:LINKIT7688_IP) { $env:LINKIT7688_IP } else { '192.168.50.249' }),
     [string] $KeyFile   = (Join-Path $PSScriptRoot '..\provisioning\lib\keys\board_rsa')
 )
 

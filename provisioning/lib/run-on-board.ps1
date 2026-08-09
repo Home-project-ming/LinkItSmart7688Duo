@@ -35,7 +35,8 @@ param(
     [Parameter(ParameterSetName = 'Command', Mandatory)]
     [string] $Command,
 
-    [string] $BoardHost = '192.168.31.156',
+    # See deploy.ps1: $env:LINKIT7688_IP overrides when the board moves.
+    [string] $BoardHost = $(if ($env:LINKIT7688_IP) { $env:LINKIT7688_IP } else { '192.168.50.249' }),
     [string] $User      = 'root',
 
     # Pin the host key. Obtain a new one by running plink with -batch once:
